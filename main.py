@@ -132,12 +132,14 @@ class UpdatePos(BoxLayout):
         x = atualizaPosicoes((touch.pos[0], touch.pos[1]))[0]
         y = atualizaPosicoes((touch.pos[0], touch.pos[1]))[1]
 
+        print(atualizaPosicoes(touch.pos))
+
         capturaEsc = Image.open('gallery/imgTemp.png')
         moldeEsc = Image.open('gallery/imagemMoldeEscrito.png')
 
-        if((int(touch.pos[0]) >= 140 and int(touch.pos[0]) <= 460) and (int(touch.pos[1]) >= 100 and int(touch.pos[1]) <= 300) ):
-            x = ((x - 140) * 4.4) - 180
-            y = ((y - 250) * 4.4) - 20
+        if((int(touch.pos[0]) >= 50 and int(touch.pos[0]) <= 750) and (int(touch.pos[1]) >= 100 and int(touch.pos[1]) <= 450) ):
+            x = ((x - 100) * 2.16) - 140
+            y = ((y - 250) * 2.16) - 300
             textInputCoord.text = f"{x, y}"
             confirmarPosicao(capturaEsc, moldeEsc, atualizaPosicoes((x, y)))
 
