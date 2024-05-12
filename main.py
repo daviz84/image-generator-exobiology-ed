@@ -20,7 +20,7 @@ from PIL import ImageFont
 from kivy.core.window import Window
 import json
 
-Window.clearcolor = (1, 1, 1, 1)
+Window.clearcolor = "white"
 textInputUm = TextInput()
 textInputCoord = TextInput()
 textInputCoord.disabled = True
@@ -65,7 +65,6 @@ class MeuAplicativo(App):
         layoutImage.size_hint = (None,None)
 
         layoutImage.add_widget(imageEdit)
-
 
         layoutForm.add_widget(textInputUm)
         layoutForm.add_widget(buttonGerar)
@@ -149,6 +148,8 @@ class ButtonGerar(Button):
         super(ButtonGerar, self).__init__(**kwargs)
         self.text = "ENVIAR"
         self.background_color = "white"
+        self.size_hint = (None, None)
+        self.width = 250
 
     def on_press(self):
         clicarBotao()
