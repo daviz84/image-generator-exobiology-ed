@@ -3,8 +3,8 @@
 # criar a função build
 from kivy.config import Config
 
-Config.set('graphics', 'width', '600')
-Config.set('graphics', 'height', '450')
+Config.set('graphics', 'width', '800')
+Config.set('graphics', 'height', '600')
 Config.set('graphics', 'resizable', True)
 
 import requests
@@ -17,27 +17,32 @@ from kivy.uix.image import AsyncImage
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
+from kivy.core.window import Window
 import json
 
+Window.clearcolor = (1, 1, 1, 1)
 textInputUm = TextInput()
 textInputCoord = TextInput()
+textInputCoord.disabled = True
 buttonGerar = Button()
 imageEdit = AsyncImage()
 imageEdit.size_hint = (None,None)
-imageEdit.width = 500
-imageEdit.height = 200
+imageEdit.width = 700
+imageEdit.height = 350
 imageEdit.padding = (0,0,0,0)
+imageEdit.fit_mode = "fill"
 
 
 #PARTE CÓDIGO FUNCIONAL
 class MeuAplicativo(App):
 
     def build(self):
-        self.title = "APP DAVI"
+        self.title = "Image Generation Exobiology ED"
 
         buttonGerar = ButtonGerar()
 
         textInputUm.text = ""
+
         textInputUm.id = "idTxtInput"
 
         textInputCoord.size_hint = (0, 0)
@@ -49,13 +54,13 @@ class MeuAplicativo(App):
         layoutMain.padding = (50, 50, 50, 50)
 
         layoutForm = BoxLayout()
-        layoutForm.width = 500
+        layoutForm.width = 700
+        layoutForm.height = 100
         layoutForm.size_hint = (None, None)
 
         layoutImage = BoxLayout()
-        layoutImage.width = 500
-        layoutImage.height = 200
-        layoutImage.padding = (0,0,0,0)
+        layoutImage.width = 700
+        layoutImage.height = 350
 
         layoutImage.size_hint = (None,None)
 
@@ -143,7 +148,7 @@ class ButtonGerar(Button):
     def __init__(self, **kwargs):
         super(ButtonGerar, self).__init__(**kwargs)
         self.text = "ENVIAR"
-        self.background_color = "green"
+        self.background_color = "white"
 
     def on_press(self):
         clicarBotao()
