@@ -108,7 +108,7 @@ def clicarBotao():
 
 
 def confirmarPosicao(captura, molde, positions):
-    captura.paste(molde, (positions[0], -positions[1]), mask=molde)
+    captura.paste(molde, (positions[0], positions[1]), mask=molde)
     captura.save('gallery/imagemMesclada.png')
 
     imageEdit.source = 'gallery/imagemMesclada.png'
@@ -138,10 +138,12 @@ class UpdatePos(BoxLayout):
         moldeEsc = Image.open('gallery/imagemMoldeEscrito.png')
 
         if((int(touch.pos[0]) >= 50 and int(touch.pos[0]) <= 750) and (int(touch.pos[1]) >= 100 and int(touch.pos[1]) <= 450) ):
-            x = ((x - 100) * 2.16) - 140
-            y = ((y - 250) * 2.16) - 300
+            x = ((x - 50) * 2) - 200
+            y = -((y - 450) * 2.5) - 200
+
             textInputCoord.text = f"{x, y}"
             confirmarPosicao(capturaEsc, moldeEsc, atualizaPosicoes((x, y)))
+
 
 
 class ButtonGerar(Button):
