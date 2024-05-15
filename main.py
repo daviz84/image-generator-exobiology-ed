@@ -5,7 +5,7 @@ from kivy.config import Config
 
 Config.set('graphics', 'width', '800')
 Config.set('graphics', 'height', '600')
-Config.set('graphics', 'resizable', True)
+Config.set('graphics', 'resizable', False)
 
 import requests
 import pyscreenshot
@@ -20,20 +20,54 @@ from PIL import ImageFont
 from kivy.core.window import Window
 import json
 
+# INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
+
 Window.clearcolor = "white"
-textInputUm = TextInput()
-textInputCoord = TextInput()
-textInputCoord.disabled = True
+
+layoutMain = BoxLayout()
+layoutMain.orientation = "vertical"
+layoutMain.padding = (50, 50, 50, 50)
+
+txtInputJournal = TextInput()
+txtInputJournal.id = "idTxtInput"
+
 buttonGerar = Button()
+
+layoutForm = BoxLayout()
+layoutForm.width = 700
+layoutForm.height = 100
+layoutForm.size_hint = (None, None)
+
+layoutImage = BoxLayout()
+layoutImage.width = 700
+layoutImage.height = 350
+layoutImage.size_hint = (None, None)
+
 imageEdit = AsyncImage()
-imageEdit.size_hint = (None,None)
+imageEdit.size_hint = (None, None)
 imageEdit.width = 700
 imageEdit.height = 350
-imageEdit.padding = (0,0,0,0)
+imageEdit.padding = (0, 0, 0, 0)
 imageEdit.fit_mode = "fill"
 
+layoutBottom = BoxLayout()
+layoutBottom.spacing = 500
+layoutBottom.size_hint = (None, None)
+layoutBottom.width = 700
+layoutBottom.height = 50
 
-#PARTE CÓDIGO FUNCIONAL
+txtInputCoord = TextInput()
+txtInputCoord.disabled = True
+txtInputCoord.size_hint = (0, 0)
+txtInputCoord.width = 100
+txtInputCoord.height = 50
+
+buttonSalvar = Button()
+buttonSalvar.size_hint = (None, None)
+buttonSalvar.height = 50
+buttonSalvar.text = "SALVAR"
+
+
 class MeuAplicativo(App):
 
     def build(self):
@@ -41,46 +75,27 @@ class MeuAplicativo(App):
 
         buttonGerar = ButtonGerar()
 
-        textInputUm.text = ""
-
-        textInputUm.id = "idTxtInput"
-
-        textInputCoord.size_hint = (0, 0)
-        textInputCoord.width = 100
-        textInputCoord.height = 50
-
-        layoutMain = BoxLayout()
-        layoutMain.orientation = "vertical"
-        layoutMain.padding = (50, 50, 50, 50)
-
-        layoutForm = BoxLayout()
-        layoutForm.width = 700
-        layoutForm.height = 100
-        layoutForm.size_hint = (None, None)
-
-        layoutImage = BoxLayout()
-        layoutImage.width = 700
-        layoutImage.height = 350
-
-        layoutImage.size_hint = (None,None)
-
         layoutImage.add_widget(imageEdit)
 
-        layoutForm.add_widget(textInputUm)
+        layoutForm.add_widget(txtInputJournal)
         layoutForm.add_widget(buttonGerar)
 
-        layoutMain.add_widget(UpdatePos())
+        layoutBottom.add_widget(txtInputCoord)
+        layoutBottom.add_widget(buttonSalvar)
+
         layoutMain.add_widget(layoutForm)
         layoutMain.add_widget(layoutImage)
-        layoutMain.add_widget(textInputCoord)
+        layoutMain.add_widget(layoutBottom)
+
+        layoutMain.add_widget(UpdatePos())  # BoxLayout adicionado para manter a posição do mouse atualizada
 
         return layoutMain
 
 
 def clicarBotao():
-    value_txtinputJournal = json.loads(textInputUm.text)
+    value_txtinputJournal = json.loads(txtInputJournal.text)
 
-    #REQUISIÇÃO NOME DO SYSTEMA PELO CODIGO
+    #REQUISIÇÃO NOME DO SISTEMA PELO CODIGO
     requisicaoNameSystem = requests.get(
         f"https://www.edsm.net/typeahead/systems/query/{value_txtinputJournal['SystemAddress']}")
     resultRequisicaoNameSystem = requisicaoNameSystem.json()[0]["value"]
@@ -137,14 +152,18 @@ class UpdatePos(BoxLayout):
         capturaEsc = Image.open('gallery/imgTemp.png')
         moldeEsc = Image.open('gallery/imagemMoldeEscrito.png')
 
-        if((int(touch.pos[0]) >= 50 and int(touch.pos[0]) <= 750) and (int(touch.pos[1]) >= 100 and int(touch.pos[1]) <= 450) ):
-            x = ((x - 50) * 2) - 200
-            y = -((y - 450) * 2.5) - 200
+        if ((int(touch.pos[0]) >= 50 and int(touch.pos[0]) <= 750) and (
+                int(touch.pos[1]) >= 100 and int(touch.pos[1]) <= 450)):
+            resolX = 1440
+            resolY = 900
+            proporcaoX = (resolX * 1.18) / 800
+            proporcaoY = (resolY * 1.6) / 600
 
-            textInputCoord.text = f"{x, y}"
+            x = ((x - 50) * proporcaoX) - 200
+            y = -((y - 450) * proporcaoY) - 200
+
+            txtInputCoord.text = f"{x, y}"
             confirmarPosicao(capturaEsc, moldeEsc, atualizaPosicoes((x, y)))
-
-
 
 class ButtonGerar(Button):
 
