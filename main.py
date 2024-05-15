@@ -91,8 +91,12 @@ class MeuAplicativo(App):
 
         return layoutMain
 
+    def on_start(self):
+        print("START")
+
 
 def clicarBotao():
+
     value_txtinputJournal = json.loads(txtInputJournal.text)
 
     #REQUISIÇÃO NOME DO SISTEMA PELO CODIGO
@@ -120,7 +124,6 @@ def clicarBotao():
     molde.save('gallery/imagemMoldeEscrito.png')
 
     confirmarPosicao(captura, molde, (0, 0))
-
 
 def confirmarPosicao(captura, molde, positions):
     captura.paste(molde, (positions[0], positions[1]), mask=molde)
@@ -164,6 +167,7 @@ class UpdatePos(BoxLayout):
 
             txtInputCoord.text = f"{x, y}"
             confirmarPosicao(capturaEsc, moldeEsc, atualizaPosicoes((x, y)))
+
 
 class ButtonGerar(Button):
 
