@@ -1,6 +1,8 @@
 # Importar o App, Builder (GUI)
 # Criar o nosso aplicativo
 # criar a função build
+import sys
+
 from kivy.config import Config
 
 Config.set('graphics', 'width', '800')
@@ -19,6 +21,8 @@ from PIL import ImageDraw
 from PIL import ImageFont
 from kivy.core.window import Window
 import json
+import classesUtilities
+from threading import Thread
 
 # INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
 
@@ -124,6 +128,10 @@ def clicarBotao():
     molde.save('gallery/imagemMoldeEscrito.png')
 
     confirmarPosicao(captura, molde, (0, 0))
+
+    trhed = Thread(target=classesUtilities.monitorar)
+    trhed.start()
+
 
 def confirmarPosicao(captura, molde, positions):
     captura.paste(molde, (positions[0], positions[1]), mask=molde)
