@@ -21,8 +21,10 @@ from PIL import ImageDraw
 from PIL import ImageFont
 from kivy.core.window import Window
 import json
-import classesUtilities
 from threading import Thread
+import time
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 # INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
 
@@ -99,8 +101,8 @@ class MeuAplicativo(App):
         print("START")
 
 
-def clicarBotao():
 
+def clicarBotao():
     value_txtinputJournal = json.loads(txtInputJournal.text)
 
     #REQUISIÇÃO NOME DO SISTEMA PELO CODIGO
@@ -129,7 +131,7 @@ def clicarBotao():
 
     confirmarPosicao(captura, molde, (0, 0))
 
-    trhed = Thread(target=classesUtilities.monitorar)
+    trhed = Thread(target=createWatchdog)
     trhed.start()
 
 
@@ -190,4 +192,39 @@ class ButtonGerar(Button):
         clicarBotao()
 
 
-MeuAplicativo().run()
+def createWatchdog():
+
+    observer = Observer()
+
+    def on_modified(event):
+        print("ARQUIVO MODIFICADO")
+
+    def on_any_event(event):
+        print(event.src_path)
+        print("O TEXTO É: " + txtInputJournal.text)
+
+    event_handler = FileSystemEventHandler()
+    event_handler.on_modified = on_modified
+    event_handler.on_any_event = on_any_event
+
+    path = "C:/Users/davio/Desktop/fileMod"
+
+    observer.schedule(event_handler, path, recursive=True)
+    observer.start()
+
+    try:
+        print("Monitorando")
+        while not layoutMain:
+            time.sleep(1)
+    except Exception:
+        print("Terminado")
+        observer.stop()
+    exit()
+
+
+
+
+
+
+if __name__ == "__main__":
+    MeuAplicativo().run()

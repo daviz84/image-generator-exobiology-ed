@@ -2,6 +2,7 @@ import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+
 observer = Observer()
 
 def on_modified(event):
@@ -9,9 +10,11 @@ def on_modified(event):
 
 def on_any_event(event):
     print(event.src_path)
+    print("O TEXTO É: ")
 
 
 def monitorar():
+
 
     event_handler = FileSystemEventHandler()
     event_handler.on_modified = on_modified
@@ -26,7 +29,12 @@ def monitorar():
         print("Monitorando")
         while True:
             time.sleep(1)
+
     except:
         observer.stop()
         print("Terminado")
     observer.join()
+
+
+if __name__ == "__main__":
+    monitorar()
