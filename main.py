@@ -68,10 +68,8 @@ txtInputCoord.size_hint = (0, 0)
 txtInputCoord.width = 100
 txtInputCoord.height = 50
 
-buttonSalvar = Button()
-buttonSalvar.size_hint = (None, None)
-buttonSalvar.height = 50
-buttonSalvar.text = "SALVAR"
+
+
 
 
 class MeuAplicativo(App):
@@ -80,6 +78,8 @@ class MeuAplicativo(App):
         self.title = "Image Generation Exobiology ED"
 
         buttonGerar = ButtonGerar()
+
+        buttonSalvar = ButtonSalvar()
 
         layoutImage.add_widget(imageEdit)
 
@@ -99,7 +99,10 @@ class MeuAplicativo(App):
 
     def on_start(self):
         print("START")
+        trhed = Thread(target=createWatchdog)
+        trhed.start()
 
+        testeComJournal()
 
 
 def clicarBotao():
@@ -130,10 +133,6 @@ def clicarBotao():
     molde.save('gallery/imagemMoldeEscrito.png')
 
     confirmarPosicao(captura, molde, (0, 0))
-
-    trhed = Thread(target=createWatchdog)
-    trhed.start()
-
 
 def confirmarPosicao(captura, molde, positions):
     captura.paste(molde, (positions[0], positions[1]), mask=molde)
@@ -181,8 +180,8 @@ class UpdatePos(BoxLayout):
 
 class ButtonGerar(Button):
 
-    def __init__(self, **kwargs):
-        super(ButtonGerar, self).__init__(**kwargs)
+    def __init__(self):
+        super(ButtonGerar, self).__init__()
         self.text = "ENVIAR"
         self.background_color = "white"
         self.size_hint = (None, None)
@@ -191,17 +190,28 @@ class ButtonGerar(Button):
     def on_press(self):
         clicarBotao()
 
+class ButtonSalvar(Button):
+
+    def __init__(self):
+        super(ButtonSalvar, self).__init__()
+        self.size_hint = (None, None)
+        self.height = 50
+        self.text = "SALVAR"
+
+    def on_press(self):
+        registrarDescoberta()
+
+
+
 
 def createWatchdog():
-
     observer = Observer()
 
     def on_modified(event):
-        print("ARQUIVO MODIFICADO")
+        print(event)
 
     def on_any_event(event):
-        print(event.src_path)
-        print("O TEXTO É: " + txtInputJournal.text)
+        print("")
 
     event_handler = FileSystemEventHandler()
     event_handler.on_modified = on_modified
@@ -214,7 +224,7 @@ def createWatchdog():
 
     try:
         print("Monitorando")
-        while not layoutMain:
+        while not Window:
             time.sleep(1)
     except Exception:
         print("Terminado")
@@ -222,8 +232,33 @@ def createWatchdog():
     exit()
 
 
+def registrarDescoberta():
+
+    registroJournal = json.loads(txtInputJournal.text)
+    especie = registroJournal['Variant_Localised']
+
+    arquivo = open('C:/Users/davio/Desktop/fileMod/registro.json', 'r')
+    jsonManipulavel = json.loads(arquivo.read())
 
 
+    if especie not in jsonManipulavel['especiesCatalogadas']:
+        jsonManipulavel['especiesCatalogadas'].__setitem__(especie, {"registro": registroJournal})
+        arquivo.close()
+
+        arquivo = open('C:/Users/davio/Desktop/fileMod/registro.json', 'w')
+        arquivo.write(json.dumps(jsonManipulavel))
+        arquivo.close()
+
+    else:
+        print("Espécie já registrada")
+
+def testeComJournal():
+    archive = open('C:/Users/davio/Desktop/fileMod/Journal.2024-05-06T170624.01.log', "r", errors='replace')
+    archiveLido = archive.readlines()
+    arquivoJournalLog = json.loads(archiveLido[len(archiveLido) - 1])
+
+    if arquivoJournalLog['event'] == 'ScanOrganic':
+        txtInputJournal.text = json.dumps(arquivoJournalLog)
 
 
 if __name__ == "__main__":
