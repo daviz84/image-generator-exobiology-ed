@@ -1,8 +1,7 @@
 # Importar o App, Builder (GUI)
 # Criar o nosso aplicativo
 # criar a função build
-import sys
-
+from kivy.clock import mainthread
 from kivy.config import Config
 
 Config.set('graphics', 'width', '800')
@@ -25,6 +24,10 @@ from threading import Thread
 import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import datetime
+from pydub.playback import play
+from pydub import AudioSegment
+from playsound import playsound
 
 # INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
 
@@ -54,6 +57,7 @@ imageEdit.size_hint = (None, None)
 imageEdit.width = 700
 imageEdit.height = 350
 imageEdit.padding = (0, 0, 0, 0)
+imageEdit.source = 'bordaazul.png'
 imageEdit.fit_mode = "fill"
 
 layoutBottom = BoxLayout()
@@ -68,9 +72,7 @@ txtInputCoord.size_hint = (0, 0)
 txtInputCoord.width = 100
 txtInputCoord.height = 50
 
-
-
-
+buttonGerar = None
 
 class MeuAplicativo(App):
 
@@ -102,7 +104,7 @@ class MeuAplicativo(App):
         trhed = Thread(target=createWatchdog)
         trhed.start()
 
-        testeComJournal()
+
 
 
 def clicarBotao():
@@ -133,6 +135,7 @@ def clicarBotao():
     molde.save('gallery/imagemMoldeEscrito.png')
 
     confirmarPosicao(captura, molde, (0, 0))
+
 
 def confirmarPosicao(captura, molde, positions):
     captura.paste(molde, (positions[0], positions[1]), mask=molde)
@@ -182,13 +185,15 @@ class ButtonGerar(Button):
 
     def __init__(self):
         super(ButtonGerar, self).__init__()
-        self.text = "ENVIAR"
+        self.text = "GERAR IMAGEM"
         self.background_color = "white"
         self.size_hint = (None, None)
         self.width = 250
 
     def on_press(self):
         clicarBotao()
+
+
 
 class ButtonSalvar(Button):
 
@@ -202,20 +207,17 @@ class ButtonSalvar(Button):
         registrarDescoberta()
 
 
-
-
 def createWatchdog():
     observer = Observer()
 
+    @mainthread
     def on_modified(event):
         print(event)
+        testeComJournal(event.src_path)
 
-    def on_any_event(event):
-        print("")
 
     event_handler = FileSystemEventHandler()
     event_handler.on_modified = on_modified
-    event_handler.on_any_event = on_any_event
 
     path = "C:/Users/davio/Desktop/fileMod"
 
@@ -233,13 +235,11 @@ def createWatchdog():
 
 
 def registrarDescoberta():
-
     registroJournal = json.loads(txtInputJournal.text)
     especie = registroJournal['Variant_Localised']
 
     arquivo = open('C:/Users/davio/Desktop/fileMod/registro.json', 'r')
     jsonManipulavel = json.loads(arquivo.read())
-
 
     if especie not in jsonManipulavel['especiesCatalogadas']:
         jsonManipulavel['especiesCatalogadas'].__setitem__(especie, {"registro": registroJournal})
@@ -252,13 +252,22 @@ def registrarDescoberta():
     else:
         print("Espécie já registrada")
 
-def testeComJournal():
-    archive = open('C:/Users/davio/Desktop/fileMod/Journal.2024-05-06T170624.01.log', "r", errors='replace')
-    archiveLido = archive.readlines()
-    arquivoJournalLog = json.loads(archiveLido[len(archiveLido) - 1])
+def testeComJournal(file_modified):
 
-    if arquivoJournalLog['event'] == 'ScanOrganic':
-        txtInputJournal.text = json.dumps(arquivoJournalLog)
+    dateNow = datetime.date.today()
+    file_modified = file_modified.replace(r'\\', '/')
+
+    if f"Journal.{dateNow}" in file_modified:
+        print("YESSS")
+
+        archive = open(file_modified, "r", errors='replace')
+        archiveLido = archive.readlines()
+        arquivoJournalLog = json.loads(archiveLido[len(archiveLido) - 1])
+
+        if arquivoJournalLog['event'] == 'ScanOrganic':
+            txtInputJournal.text = json.dumps(arquivoJournalLog)
+            playsound('system-notification-199277.mp3')
+
 
 
 if __name__ == "__main__":
