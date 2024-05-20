@@ -237,22 +237,21 @@ def createWatchdog():
         print(event)
         testeComJournal(event.src_path)
 
-
-    event_handler = FileSystemEventHandler()
-    event_handler.on_modified = on_modified
-
-    path = "C:/Users/davio/Desktop/fileMod"
-
-    #observer.schedule(event_handler, pathED, recursive=True)
-    observer.schedule(event_handler, path, recursive=True)
-    observer.start()
-
     try:
+        event_handler = FileSystemEventHandler()
+        event_handler.on_modified = on_modified
+
+        path = "C:/Users/davio/Desktop/fileMod"
+
+        #observer.schedule(event_handler, pathED, recursive=True)
+        observer.schedule(event_handler, path, recursive=True)
+        observer.start()
+
         print("Monitorando")
         while not Window:
             time.sleep(1)
-    except Exception:
-        print("Terminado")
+    except (FileNotFoundError,Exception):
+        print("Pasta de monitoramento não encontrada")
         observer.stop()
     exit()
 
