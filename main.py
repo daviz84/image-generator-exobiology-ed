@@ -268,7 +268,7 @@ def testeComJournal(file_modified):
         arquivoJournalLog = json.loads(archiveRead[len(archiveRead) - 1])
 
         if arquivoJournalLog['event'] == 'ScanOrganic':
-            txtInputJournal.text = json.dumps(arquivoJournalLog)
+            txtInputJournal.text = json.dumps(arquivoJournalLog)      
             playsound('fonts/system-notification-199277.mp3')
             
 def registrarDescoberta():
