@@ -1,6 +1,4 @@
-# Importar o App, Builder (GUI)
-# Criar o nosso aplicativo
-# criar a função build
+import os
 from kivy.clock import mainthread
 from kivy.config import Config
 
@@ -25,9 +23,11 @@ import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import datetime
-from pydub.playback import play
-from pydub import AudioSegment
 from playsound import playsound
+from os import path
+import tkinter as tk
+
+
 
 # INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
 
@@ -57,7 +57,7 @@ imageEdit.size_hint = (None, None)
 imageEdit.width = 700
 imageEdit.height = 350
 imageEdit.padding = (0, 0, 0, 0)
-imageEdit.source = 'bordaazul.png'
+imageEdit.source = 'gallery/borda-default.png'
 imageEdit.fit_mode = "fill"
 
 layoutBottom = BoxLayout()
@@ -72,7 +72,9 @@ txtInputCoord.size_hint = (0, 0)
 txtInputCoord.width = 100
 txtInputCoord.height = 50
 
-buttonGerar = None
+#RETORNA O DIRETORIO DO USUARIO E COMPLEMENTA COM A PASTA DE REGISTROS DO PROGRAMA
+pathOrigin = path.join(path.expanduser("~"), "Documents/image-generator-exobiology-ed").replace("\\", "/")
+pathED = path.join(path.expanduser("~"), "Saved Games/Frontier Developments/Elite Dangerous").replace("\\", "/")
 
 class MeuAplicativo(App):
 
@@ -100,56 +102,72 @@ class MeuAplicativo(App):
         return layoutMain
 
     def on_start(self):
-        print("START")
+        print("INICIANDO PROGRAMA")
+
+        #INSTANCIA E INICIA O WATCHDOG EM OUTRA THREAD (RESPONSAVEL POR MONITORAR OS REGISTROS DO JOGO - PASTAS E ARQUIVOS)
         trhed = Thread(target=createWatchdog)
         trhed.start()
 
+        #CRIA OS ARQUIVOS DE REGISTRO PARA ARMANEZAR AS ESPÉCIES ANALISADAS
+        try:
+            os.mkdir(f'{pathOrigin}')
+            os.mkdir(f'{pathOrigin}/gallery')
+
+            criarAqv = open(f'{pathOrigin}/registro.json', 'w')
+            criarAqv.write('{"especiesCatalogadas": {}}')
+            criarAqv.close()
+
+        except FileExistsError:
+            print("ARQUIVO JÁ CRIADO")
 
 
 
-def clicarBotao():
+def gerarImagem():
     value_txtinputJournal = json.loads(txtInputJournal.text)
 
-    #REQUISIÇÃO NOME DO SISTEMA PELO CODIGO
-    requisicaoNameSystem = requests.get(
+    #REQUISIÇÃO NOME DO SISTEMA PELO CODIGO DO JOURNAL (RETORNA UM JSON STRING)
+    requisitionNameSystem = requests.get(
         f"https://www.edsm.net/typeahead/systems/query/{value_txtinputJournal['SystemAddress']}")
-    resultRequisicaoNameSystem = requisicaoNameSystem.json()[0]["value"]
+    resultRequisitionNameSystem = requisitionNameSystem.json()[0]["value"]
 
-    imagemPrint = pyscreenshot.grab()
-    imagemPrint.save('gallery/imgTemp.png')
+    #CAPTURA O MONITOR PRINCIPAL E SALVA COMO ARQUIVO "TEMPORARIO"
+    imagePrint = pyscreenshot.grab()
+    imagePrint.save(f'{pathOrigin}/gallery/imgTemp.png')
+
 
     imageEdit.source = 'gallery/imgTemp.png'
     imageEdit.reload()
 
     #PREENCHE IMAGEM COM AS INFORMAÇÕES
-    captura = Image.open('gallery/imgTemp.png')
-    molde = Image.open('gallery/imagemMolde.png')
-    molde_draw = ImageDraw.Draw(molde)
+    printscreen = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
+    mold = Image.open('gallery/imagemMolde.png')
+    mold_draw = ImageDraw.Draw(mold)
     mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 26)
     mold_fontSmall = ImageFont.truetype('fonts/Glitch inside.otf', 12)
-    molde_draw.text((258, 53),
+    mold_draw.text((258, 53),
                     f"{value_txtinputJournal['Species_Localised']}\n {value_txtinputJournal['Variant_Localised'].split('- ')[1]} ",
                     font=mold_font)
-    molde_draw.text((360, 115), f"{resultRequisicaoNameSystem}", font=mold_fontSmall)
+    mold_draw.text((360, 115), f"{resultRequisitionNameSystem}", font=mold_fontSmall)
 
-    molde.save('gallery/imagemMoldeEscrito.png')
+    mold.save(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
 
-    confirmarPosicao(captura, molde, (0, 0))
+    colarMolde(printscreen, mold, (0, 0))
 
 
-def confirmarPosicao(captura, molde, positions):
-    captura.paste(molde, (positions[0], positions[1]), mask=molde)
-    captura.save('gallery/imagemMesclada.png')
+def colarMolde(printscreen, mold, positions):
+    printscreen.paste(mold, positions, mask=mold)
+    printscreen.save(f'{pathOrigin}/gallery/imagemMesclada.png')
 
-    imageEdit.source = 'gallery/imagemMesclada.png'
+    imageEdit.source = f'{pathOrigin}/gallery/imagemMesclada.png'
     imageEdit.reload()
 
 
-def atualizaPosicoes(tupla):
-    valX = int(tupla[0])
-    valY = int(tupla[1])
+def atualizaPosicoes(tuple):
+    #FUNÇÃO UTILITÁRIA PARA TRANSFORMAR EM INTEIRO (PARA O CLICK E PARA O CÁLCULO DE PROPORÇÃO)
+    valX = int(tuple[0])
+    valY = int(tuple[1])
 
-    return (valX, valY)
+    return (valX,valY)
 
 
 class UpdatePos(BoxLayout):
@@ -159,26 +177,30 @@ class UpdatePos(BoxLayout):
         self.size_hint = (None, None)
 
     def on_touch_down(self, touch):
-        x = atualizaPosicoes((touch.pos[0], touch.pos[1]))[0]
-        y = atualizaPosicoes((touch.pos[0], touch.pos[1]))[1]
+        root = tk.Tk()
 
-        print(atualizaPosicoes(touch.pos))
+        x = int(touch.pos[0])
+        y = int(touch.pos[1])
 
-        capturaEsc = Image.open('gallery/imgTemp.png')
-        moldeEsc = Image.open('gallery/imagemMoldeEscrito.png')
+        try:
+            imgTemp = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
+            mold = Image.open(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
 
-        if ((int(touch.pos[0]) >= 50 and int(touch.pos[0]) <= 750) and (
-                int(touch.pos[1]) >= 100 and int(touch.pos[1]) <= 450)):
-            resolX = 1440
-            resolY = 900
-            proporcaoX = (resolX * 1.18) / 800
-            proporcaoY = (resolY * 1.6) / 600
+            if (x >= 50 and x <= 750) and (y >= 100 and y <= 450):
+                resolX = root.winfo_screenwidth()
+                resolY = root.winfo_screenheight()
 
-            x = ((x - 50) * proporcaoX) - 200
-            y = -((y - 450) * proporcaoY) - 200
+                proporcaoX = (resolX * 1.18) / 800
+                proporcaoY = (resolY * 1.6) / 600
 
-            txtInputCoord.text = f"{x, y}"
-            confirmarPosicao(capturaEsc, moldeEsc, atualizaPosicoes((x, y)))
+                x = int(((x - 50) * proporcaoX) - 220)
+                y = int(-((y - 450) * proporcaoY) - 185)
+
+                txtInputCoord.text = f"{x, y}"
+                colarMolde(imgTemp, mold, (x, y))
+
+        except FileNotFoundError:
+            print("Aguardando algum registro do journal")
 
 
 class ButtonGerar(Button):
@@ -191,7 +213,7 @@ class ButtonGerar(Button):
         self.width = 250
 
     def on_press(self):
-        clicarBotao()
+        gerarImagem()
 
 
 
@@ -221,6 +243,7 @@ def createWatchdog():
 
     path = "C:/Users/davio/Desktop/fileMod"
 
+    #observer.schedule(event_handler, pathED, recursive=True)
     observer.schedule(event_handler, path, recursive=True)
     observer.start()
 
@@ -233,40 +256,41 @@ def createWatchdog():
         observer.stop()
     exit()
 
-
-def registrarDescoberta():
-    registroJournal = json.loads(txtInputJournal.text)
-    especie = registroJournal['Variant_Localised']
-
-    arquivo = open('C:/Users/davio/Desktop/fileMod/registro.json', 'r')
-    jsonManipulavel = json.loads(arquivo.read())
-
-    if especie not in jsonManipulavel['especiesCatalogadas']:
-        jsonManipulavel['especiesCatalogadas'].__setitem__(especie, {"registro": registroJournal})
-        arquivo.close()
-
-        arquivo = open('C:/Users/davio/Desktop/fileMod/registro.json', 'w')
-        arquivo.write(json.dumps(jsonManipulavel))
-        arquivo.close()
-
-    else:
-        print("Espécie já registrada")
-
 def testeComJournal(file_modified):
 
     dateNow = datetime.date.today()
-    file_modified = file_modified.replace(r'\\', '/')
+    file_modified = file_modified.replace('\\', '/')
 
     if f"Journal.{dateNow}" in file_modified:
-        print("YESSS")
 
         archive = open(file_modified, "r", errors='replace')
-        archiveLido = archive.readlines()
-        arquivoJournalLog = json.loads(archiveLido[len(archiveLido) - 1])
+        archiveRead = archive.readlines()
+        arquivoJournalLog = json.loads(archiveRead[len(archiveRead) - 1])
 
         if arquivoJournalLog['event'] == 'ScanOrganic':
             txtInputJournal.text = json.dumps(arquivoJournalLog)
-            playsound('system-notification-199277.mp3')
+            playsound('fonts/system-notification-199277.mp3')
+            
+def registrarDescoberta():
+    registryJournal = json.loads(txtInputJournal.text)
+    specie = registryJournal['Variant_Localised']
+
+    registryDaily = open(f'{pathOrigin}/registro.json', 'r')
+    registryDailyJSON = json.loads(registryDaily.read())
+
+    if specie not in registryDailyJSON['especiesCatalogadas']:
+        registryDailyJSON['especiesCatalogadas'].__setitem__(specie, {"registro": registryJournal})
+        registryDaily.close()
+
+        registryDayly = open(f'{pathOrigin}/registro.json', 'w')
+        registryDayly.write(json.dumps(registryDailyJSON))
+        registryDayly.close()
+        print("ESPÉCIE REGISTRADA COM SUCESSO!")
+
+    else:
+        print("ESPÉCIE JÁ REGISTRADA!")
+
+
 
 
 
