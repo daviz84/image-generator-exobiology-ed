@@ -1,9 +1,11 @@
 import os
+
+import kivy.uix.widget
 from kivy.clock import mainthread
 from kivy.config import Config
 
 Config.set('graphics', 'width', '800')
-Config.set('graphics', 'height', '600')
+Config.set('graphics', 'height', '200')
 Config.set('graphics', 'resizable', False)
 
 import requests
@@ -26,8 +28,7 @@ import datetime
 from playsound import playsound
 from os import path
 import tkinter as tk
-
-
+from pynput.keyboard import Key, Listener
 
 # INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
 
@@ -36,6 +37,7 @@ Window.clearcolor = "white"
 layoutMain = BoxLayout()
 layoutMain.orientation = "vertical"
 layoutMain.padding = (50, 50, 50, 50)
+layoutMain.minimum_height = 600
 
 txtInputJournal = TextInput()
 txtInputJournal.id = "idTxtInput"
@@ -49,22 +51,25 @@ layoutForm.size_hint = (None, None)
 
 layoutImage = BoxLayout()
 layoutImage.width = 700
-layoutImage.height = 350
+layoutImage.height = 400
 layoutImage.size_hint = (None, None)
+layoutImage.orientation = "vertical"
 
 imageEdit = AsyncImage()
 imageEdit.size_hint = (None, None)
 imageEdit.width = 700
 imageEdit.height = 350
 imageEdit.padding = (0, 0, 0, 0)
-imageEdit.source = 'gallery/borda-default.png'
 imageEdit.fit_mode = "fill"
 
 layoutBottom = BoxLayout()
-layoutBottom.spacing = 500
+layoutBottom.spacing = 400
 layoutBottom.size_hint = (None, None)
 layoutBottom.width = 700
 layoutBottom.height = 50
+
+layoutBottomOptions = BoxLayout()
+layoutBottomOptions.size_hint = (None, None)
 
 txtInputCoord = TextInput()
 txtInputCoord.disabled = True
@@ -76,6 +81,7 @@ txtInputCoord.height = 50
 pathOrigin = path.join(path.expanduser("~"), "Documents/image-generator-exobiology-ed").replace("\\", "/")
 pathED = path.join(path.expanduser("~"), "Saved Games/Frontier Developments/Elite Dangerous").replace("\\", "/")
 
+
 class MeuAplicativo(App):
 
     def build(self):
@@ -83,19 +89,23 @@ class MeuAplicativo(App):
 
         buttonGerar = ButtonGerar()
 
+        buttonReload = ButtonReload()
+
         buttonSalvar = ButtonSalvar()
 
+        layoutBottomOptions.add_widget(buttonReload)
+        layoutBottomOptions.add_widget(buttonSalvar)
+
+        layoutBottom.add_widget(txtInputCoord)
+        layoutBottom.add_widget(layoutBottomOptions)
+
         layoutImage.add_widget(imageEdit)
+        layoutImage.add_widget(layoutBottom)
 
         layoutForm.add_widget(txtInputJournal)
         layoutForm.add_widget(buttonGerar)
 
-        layoutBottom.add_widget(txtInputCoord)
-        layoutBottom.add_widget(buttonSalvar)
-
         layoutMain.add_widget(layoutForm)
-        layoutMain.add_widget(layoutImage)
-        layoutMain.add_widget(layoutBottom)
 
         layoutMain.add_widget(UpdatePos())  # BoxLayout adicionado para manter a posição do mouse atualizada
 
@@ -103,6 +113,7 @@ class MeuAplicativo(App):
 
     def on_start(self):
         print("INICIANDO PROGRAMA")
+        createObserverKeyboard()
 
         #INSTANCIA E INICIA O WATCHDOG EM OUTRA THREAD (RESPONSAVEL POR MONITORAR OS REGISTROS DO JOGO - PASTAS E ARQUIVOS)
         trhed = Thread(target=createWatchdog)
@@ -117,12 +128,18 @@ class MeuAplicativo(App):
             criarAqv.write('{"especiesCatalogadas": {}}')
             criarAqv.close()
 
+
         except FileExistsError:
             print("ARQUIVO JÁ CRIADO")
 
-
-
+@mainthread
 def gerarImagem():
+    Window.size = (800, 600)
+    try:
+        layoutMain.add_widget(layoutImage)
+    except kivy.uix.widget.WidgetException:
+        print("Widget já adicionado")
+
     value_txtinputJournal = json.loads(txtInputJournal.text)
 
     #REQUISIÇÃO NOME DO SISTEMA PELO CODIGO DO JOURNAL (RETORNA UM JSON STRING)
@@ -134,7 +151,6 @@ def gerarImagem():
     imagePrint = pyscreenshot.grab()
     imagePrint.save(f'{pathOrigin}/gallery/imgTemp.png')
 
-
     imageEdit.source = 'gallery/imgTemp.png'
     imageEdit.reload()
 
@@ -145,8 +161,8 @@ def gerarImagem():
     mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 26)
     mold_fontSmall = ImageFont.truetype('fonts/Glitch inside.otf', 12)
     mold_draw.text((258, 53),
-                    f"{value_txtinputJournal['Species_Localised']}\n {value_txtinputJournal['Variant_Localised'].split('- ')[1]} ",
-                    font=mold_font)
+                   f"{value_txtinputJournal['Species_Localised']}\n {value_txtinputJournal['Variant_Localised'].split('- ')[1]} ",
+                   font=mold_font)
     mold_draw.text((360, 115), f"{resultRequisitionNameSystem}", font=mold_fontSmall)
 
     mold.save(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
@@ -167,7 +183,7 @@ def atualizaPosicoes(tuple):
     valX = int(tuple[0])
     valY = int(tuple[1])
 
-    return (valX,valY)
+    return (valX, valY)
 
 
 class UpdatePos(BoxLayout):
@@ -216,17 +232,29 @@ class ButtonGerar(Button):
         gerarImagem()
 
 
-
 class ButtonSalvar(Button):
 
     def __init__(self):
         super(ButtonSalvar, self).__init__()
         self.size_hint = (None, None)
         self.height = 50
+        self.background_color = "green"
         self.text = "SALVAR"
 
     def on_press(self):
         registrarDescoberta()
+
+
+class ButtonReload(Button):
+    def __init__(self):
+        super(ButtonReload, self).__init__()
+        self.size_hint = (None, None)
+        self.height = 50
+        self.background_color = "red"
+        self.text = "RELOAD"
+
+    def on_press(self):
+        reloadWidgets()
 
 
 def createWatchdog():
@@ -250,13 +278,13 @@ def createWatchdog():
         print("Monitorando")
         while not Window:
             time.sleep(1)
-    except (FileNotFoundError,Exception):
+    except (FileNotFoundError, Exception):
         print("Pasta de monitoramento não encontrada")
         observer.stop()
     exit()
 
-def testeComJournal(file_modified):
 
+def testeComJournal(file_modified):
     dateNow = datetime.date.today()
     file_modified = file_modified.replace('\\', '/')
 
@@ -267,9 +295,10 @@ def testeComJournal(file_modified):
         arquivoJournalLog = json.loads(archiveRead[len(archiveRead) - 1])
 
         if arquivoJournalLog['event'] == 'ScanOrganic':
-            txtInputJournal.text = json.dumps(arquivoJournalLog)      
+            txtInputJournal.text = json.dumps(arquivoJournalLog)
             playsound('fonts/system-notification-199277.mp3')
-            
+
+
 def registrarDescoberta():
     registryJournal = json.loads(txtInputJournal.text)
     specie = registryJournal['Variant_Localised']
@@ -285,13 +314,32 @@ def registrarDescoberta():
         registryDayly.write(json.dumps(registryDailyJSON))
         registryDayly.close()
         print("ESPÉCIE REGISTRADA COM SUCESSO!")
+        reloadWidgets()
 
     else:
         print("ESPÉCIE JÁ REGISTRADA!")
+        reloadWidgets()
 
 
+def reloadWidgets():
+    Window.size = (800, 200)
+    layoutMain.remove_widget(layoutImage)
+    txtInputJournal.text = ""
+
+
+
+def createObserverKeyboard():
+
+    def on_presskeyboard(key):
+        if key == Key.f2:
+            print("TESTEEEEEEE")
+            gerarImagem()
+
+    listener = Listener(on_press=on_presskeyboard)
+    listener.start()
 
 
 
 if __name__ == "__main__":
-    MeuAplicativo().run()
+    myApp = MeuAplicativo()
+    myApp.run()
