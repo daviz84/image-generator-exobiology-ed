@@ -224,7 +224,7 @@ class ButtonGerar(Button):
     def __init__(self):
         super(ButtonGerar, self).__init__()
         self.text = "GERAR IMAGEM"
-        self.background_color = "white"
+        self.background_color = "#282828"
         self.size_hint = (None, None)
         self.width = 250
 
