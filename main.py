@@ -29,6 +29,53 @@ from playsound import playsound
 from os import path
 import tkinter as tk
 from pynput.keyboard import Key, Listener
+import ctypes
+
+class ButtonGerar(Button):
+
+    def __init__(self):
+        super(ButtonGerar, self).__init__()
+        self.text = "GERAR IMAGEM"
+        self.background_color = "#282828"
+        self.size_hint = (None, None)
+        self.width = 250
+
+    def on_press(self):
+        gerarImagem()
+
+
+class ButtonSave(Button):
+
+    def __init__(self):
+        super(ButtonSave, self).__init__()
+        self.size_hint = (None, None)
+        self.height = 50
+        self.background_color = "green"
+        self.text = "SALVAR"
+
+    def on_press(self):
+        registrarDescoberta()
+
+
+class ButtonReload(Button):
+    def __init__(self):
+        super(ButtonReload, self).__init__()
+        self.size_hint = (None, None)
+        self.height = 50
+        self.background_color = "red"
+        self.text = "RECARREGAR"
+
+    def on_press(self):
+        reloadWidgets()
+
+class ButtonReplace(Button):
+    def __init__(self):
+        super(ButtonReplace, self).__init__()
+        self.size_hint = (None, None)
+        self.height = 50
+        self.background_color = "yellow"
+        self.text = "SUBSTITUIR"
+        layoutBottom.spacing = 300
 
 # INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
 
@@ -63,10 +110,10 @@ imageEdit.padding = (0, 0, 0, 0)
 imageEdit.fit_mode = "fill"
 
 layoutBottom = BoxLayout()
-layoutBottom.spacing = 400
 layoutBottom.size_hint = (None, None)
 layoutBottom.width = 700
 layoutBottom.height = 50
+layoutBottom.spacing = 400
 
 layoutBottomOptions = BoxLayout()
 layoutBottomOptions.size_hint = (None, None)
@@ -81,7 +128,6 @@ txtInputCoord.height = 50
 pathOrigin = path.join(path.expanduser("~"), "Documents/image-generator-exobiology-ed").replace("\\", "/")
 pathED = path.join(path.expanduser("~"), "Saved Games/Frontier Developments/Elite Dangerous").replace("\\", "/")
 
-
 class MeuAplicativo(App):
 
     def build(self):
@@ -91,10 +137,10 @@ class MeuAplicativo(App):
 
         buttonReload = ButtonReload()
 
-        buttonSalvar = ButtonSalvar()
+        buttonSave = ButtonSave()
 
         layoutBottomOptions.add_widget(buttonReload)
-        layoutBottomOptions.add_widget(buttonSalvar)
+        layoutBottomOptions.add_widget(buttonSave)
 
         layoutBottom.add_widget(txtInputCoord)
         layoutBottom.add_widget(layoutBottomOptions)
@@ -112,7 +158,6 @@ class MeuAplicativo(App):
         return layoutMain
 
     def on_start(self):
-        print("INICIANDO PROGRAMA")
         createObserverKeyboard()
 
         #INSTANCIA E INICIA O WATCHDOG EM OUTRA THREAD (RESPONSAVEL POR MONITORAR OS REGISTROS DO JOGO - PASTAS E ARQUIVOS)
@@ -129,45 +174,57 @@ class MeuAplicativo(App):
             criarAqv.close()
 
 
-        except FileExistsError:
+        except FileExistsError as excep:
             print("ARQUIVO JÁ CRIADO")
+
+
 
 @mainthread
 def gerarImagem():
-    Window.size = (800, 600)
+
     try:
+
+        value_txtinputJournal = json.loads(txtInputJournal.text)
+
+        # REQUISIÇÃO NOME DO SISTEMA PELO CODIGO DO JOURNAL (RETORNA UM JSON STRING)
+        requisitionNameSystem = requests.get(
+            f"https://www.edsm.net/typeahead/systems/query/{value_txtinputJournal['SystemAddress']}")
+        resultRequisitionNameSystem = requisitionNameSystem.json()[0]["value"]
+
+        # CAPTURA O MONITOR PRINCIPAL E SALVA COMO ARQUIVO "TEMPORARIO"
+        imagePrint = pyscreenshot.grab()
+        imagePrint.save(f'{pathOrigin}/gallery/imgTemp.png')
+
+        imageEdit.source = 'gallery/imgTemp.png'
+        imageEdit.reload()
+
+        # PREENCHE IMAGEM COM AS INFORMAÇÕES
+        printscreen = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
+        mold = Image.open('gallery/imagemMolde.png')
+        mold_draw = ImageDraw.Draw(mold)
+        mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 26)
+        mold_fontSmall = ImageFont.truetype('fonts/Glitch inside.otf', 12)
+        mold_draw.text((258, 53),
+                       f"{value_txtinputJournal['Species_Localised']}\n {value_txtinputJournal['Variant_Localised'].split('- ')[1]} ",
+                       font=mold_font)
+        mold_draw.text((360, 115), f"{resultRequisitionNameSystem}", font=mold_fontSmall)
+
+        mold.save(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
+
+        colarMolde(printscreen, mold, (0, 0))
+
+    except json.decoder.JSONDecodeError as JSONDecodeError:
+
+        showAlert(JSONDecodeError.msg, "CÓDIGO DO JOURNAL INVÁLIDO")
+        print("CÓDIGO DO JOURNAL INVÁLIDO")
+        return None
+
+    try:
+        Window.size = (800, 600)
         layoutMain.add_widget(layoutImage)
     except kivy.uix.widget.WidgetException:
-        print("Widget já adicionado")
+        print("WIDGET JÁ ADICIONADO")
 
-    value_txtinputJournal = json.loads(txtInputJournal.text)
-
-    #REQUISIÇÃO NOME DO SISTEMA PELO CODIGO DO JOURNAL (RETORNA UM JSON STRING)
-    requisitionNameSystem = requests.get(
-        f"https://www.edsm.net/typeahead/systems/query/{value_txtinputJournal['SystemAddress']}")
-    resultRequisitionNameSystem = requisitionNameSystem.json()[0]["value"]
-
-    #CAPTURA O MONITOR PRINCIPAL E SALVA COMO ARQUIVO "TEMPORARIO"
-    imagePrint = pyscreenshot.grab()
-    imagePrint.save(f'{pathOrigin}/gallery/imgTemp.png')
-
-    imageEdit.source = 'gallery/imgTemp.png'
-    imageEdit.reload()
-
-    #PREENCHE IMAGEM COM AS INFORMAÇÕES
-    printscreen = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
-    mold = Image.open('gallery/imagemMolde.png')
-    mold_draw = ImageDraw.Draw(mold)
-    mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 26)
-    mold_fontSmall = ImageFont.truetype('fonts/Glitch inside.otf', 12)
-    mold_draw.text((258, 53),
-                   f"{value_txtinputJournal['Species_Localised']}\n {value_txtinputJournal['Variant_Localised'].split('- ')[1]} ",
-                   font=mold_font)
-    mold_draw.text((360, 115), f"{resultRequisitionNameSystem}", font=mold_fontSmall)
-
-    mold.save(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
-
-    colarMolde(printscreen, mold, (0, 0))
 
 
 def colarMolde(printscreen, mold, positions):
@@ -216,45 +273,7 @@ class UpdatePos(BoxLayout):
                 colarMolde(imgTemp, mold, (x, y))
 
         except FileNotFoundError:
-            print("Aguardando algum registro do journal")
-
-
-class ButtonGerar(Button):
-
-    def __init__(self):
-        super(ButtonGerar, self).__init__()
-        self.text = "GERAR IMAGEM"
-        self.background_color = "#282828"
-        self.size_hint = (None, None)
-        self.width = 250
-
-    def on_press(self):
-        gerarImagem()
-
-
-class ButtonSalvar(Button):
-
-    def __init__(self):
-        super(ButtonSalvar, self).__init__()
-        self.size_hint = (None, None)
-        self.height = 50
-        self.background_color = "green"
-        self.text = "SALVAR"
-
-    def on_press(self):
-        registrarDescoberta()
-
-
-class ButtonReload(Button):
-    def __init__(self):
-        super(ButtonReload, self).__init__()
-        self.size_hint = (None, None)
-        self.height = 50
-        self.background_color = "red"
-        self.text = "RELOAD"
-
-    def on_press(self):
-        reloadWidgets()
+            print("AGUARDANDO REGISTRO DO JOURNAL")
 
 
 def createWatchdog():
@@ -263,28 +282,27 @@ def createWatchdog():
     @mainthread
     def on_modified(event):
         print(event)
-        testeComJournal(event.src_path)
+        analisaJournal(event.src_path)
 
     try:
         event_handler = FileSystemEventHandler()
         event_handler.on_modified = on_modified
 
-        path = "C:/Users/davio/Desktop/fileMod"
-
         #observer.schedule(event_handler, pathED, recursive=True)
-        observer.schedule(event_handler, path, recursive=True)
+        observer.schedule(event_handler, pathOrigin, recursive=True)
         observer.start()
 
-        print("Monitorando")
+        print("MONITORANDO")
         while not Window:
             time.sleep(1)
-    except (FileNotFoundError, Exception):
-        print("Pasta de monitoramento não encontrada")
+    except FileNotFoundError as excep:
+        showAlert(excep.strerror, "PASTA DE MONITORAMENTO DOS JOURNAIS NÃO ENCONTRADA")
         observer.stop()
+
     exit()
 
 
-def testeComJournal(file_modified):
+def analisaJournal(file_modified):
     dateNow = datetime.date.today()
     file_modified = file_modified.replace('\\', '/')
 
@@ -292,10 +310,10 @@ def testeComJournal(file_modified):
 
         archive = open(file_modified, "r", errors='replace')
         archiveRead = archive.readlines()
-        arquivoJournalLog = json.loads(archiveRead[len(archiveRead) - 1])
+        archiveJournalLog = json.loads(archiveRead[len(archiveRead) - 1])
 
-        if arquivoJournalLog['event'] == 'ScanOrganic':
-            txtInputJournal.text = json.dumps(arquivoJournalLog)
+        if archiveJournalLog['event'] == 'ScanOrganic':
+            txtInputJournal.text = json.dumps(archiveJournalLog)
             playsound('fonts/system-notification-199277.mp3')
 
 
@@ -313,12 +331,14 @@ def registrarDescoberta():
         registryDayly = open(f'{pathOrigin}/registro.json', 'w')
         registryDayly.write(json.dumps(registryDailyJSON))
         registryDayly.close()
-        print("ESPÉCIE REGISTRADA COM SUCESSO!")
+
+        showAlert("ESPÉCIE REGISTRADA COM SUCESSO!", "REGISTRO CONCLUÍDO")
         reloadWidgets()
 
     else:
-        print("ESPÉCIE JÁ REGISTRADA!")
-        reloadWidgets()
+        showAlert("ESPÉCIE JÁ REGISTRADA!", "FALHA NO REGISTRO")
+        layoutBottom.spacing = 300
+        layoutBottomOptions.add_widget(ButtonReplace())
 
 
 def reloadWidgets():
@@ -326,17 +346,18 @@ def reloadWidgets():
     layoutMain.remove_widget(layoutImage)
     txtInputJournal.text = ""
 
-
-
 def createObserverKeyboard():
 
     def on_presskeyboard(key):
         if key == Key.f2:
-            print("TESTEEEEEEE")
             gerarImagem()
 
     listener = Listener(on_press=on_presskeyboard)
     listener.start()
+
+def showAlert(excep, msg):
+    MessageBox = ctypes.windll.user32.MessageBoxW
+    MessageBox(None, excep, msg, 0)
 
 
 
