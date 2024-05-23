@@ -63,7 +63,7 @@ class ButtonReload(Button):
         self.size_hint = (None, None)
         self.height = 50
         self.background_color = "red"
-        self.text = "RECARREGAR"
+        self.text = "LIMPAR"
 
     def on_press(self):
         reloadWidgets()
@@ -75,7 +75,8 @@ class ButtonReplace(Button):
         self.height = 50
         self.background_color = "yellow"
         self.text = "SUBSTITUIR"
-        layoutBottom.spacing = 300
+
+
 
 # INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
 
@@ -123,6 +124,10 @@ txtInputCoord.disabled = True
 txtInputCoord.size_hint = (0, 0)
 txtInputCoord.width = 100
 txtInputCoord.height = 50
+
+buttonReplace = ButtonReplace()
+
+root = tk.Tk()
 
 #RETORNA O DIRETORIO DO USUARIO E COMPLEMENTA COM A PASTA DE REGISTROS DO PROGRAMA
 pathOrigin = path.join(path.expanduser("~"), "Documents/image-generator-exobiology-ed").replace("\\", "/")
@@ -215,7 +220,7 @@ def gerarImagem():
 
     except json.decoder.JSONDecodeError as JSONDecodeError:
 
-        showAlert(JSONDecodeError.msg, "CÓDIGO DO JOURNAL INVÁLIDO")
+        showAlert(JSONDecodeError.msg, "CÓDIGO DO JOURNAL INVÁLIDO", "fonts/error-5-199276.mp3", "ms")
         print("CÓDIGO DO JOURNAL INVÁLIDO")
         return None
 
@@ -250,7 +255,6 @@ class UpdatePos(BoxLayout):
         self.size_hint = (None, None)
 
     def on_touch_down(self, touch):
-        root = tk.Tk()
 
         x = int(touch.pos[0])
         y = int(touch.pos[1])
@@ -296,7 +300,7 @@ def createWatchdog():
         while not Window:
             time.sleep(1)
     except FileNotFoundError as excep:
-        showAlert(excep.strerror, "PASTA DE MONITORAMENTO DOS JOURNAIS NÃO ENCONTRADA")
+        showAlert(excep.msg, "PASTA DE MONITORAMENTO DOS JOURNAIS NÃO ENCONTRADA", "fonts/error-5-199276.mp3", "ms")
         observer.stop()
 
     exit()
@@ -314,7 +318,7 @@ def analisaJournal(file_modified):
 
         if archiveJournalLog['event'] == 'ScanOrganic':
             txtInputJournal.text = json.dumps(archiveJournalLog)
-            playsound('fonts/system-notification-199277.mp3')
+            showAlert("", "", "fonts/system-notification-199277.mp3", "s")
 
 
 def registrarDescoberta():
@@ -332,19 +336,24 @@ def registrarDescoberta():
         registryDayly.write(json.dumps(registryDailyJSON))
         registryDayly.close()
 
-        showAlert("ESPÉCIE REGISTRADA COM SUCESSO!", "REGISTRO CONCLUÍDO")
+        showAlert("ESPÉCIE REGISTRADA COM SUCESSO!", "REGISTRO CONCLUÍDO", "fonts/system-notification-199277.mp3", "ms")
+
         reloadWidgets()
+        layoutBottom.spacing = 400
+        toggleWidgets(layoutBottomOptions, buttonReplace, "r")
 
     else:
-        showAlert("ESPÉCIE JÁ REGISTRADA!", "FALHA NO REGISTRO")
+        showAlert("ESPÉCIE JÁ REGISTRADA!", "FALHA NO REGISTRO", "fonts/error-5-199276.mp3", "ms")
         layoutBottom.spacing = 300
-        layoutBottomOptions.add_widget(ButtonReplace())
+        toggleWidgets(layoutBottomOptions, buttonReplace, "a")
 
 
 def reloadWidgets():
     Window.size = (800, 200)
     layoutMain.remove_widget(layoutImage)
     txtInputJournal.text = ""
+    toggleWidgets(layoutBottomOptions, buttonReplace, "r")
+    layoutBottom.spacing = 400
 
 def createObserverKeyboard():
 
@@ -355,9 +364,39 @@ def createObserverKeyboard():
     listener = Listener(on_press=on_presskeyboard)
     listener.start()
 
-def showAlert(excep, msg):
-    MessageBox = ctypes.windll.user32.MessageBoxW
-    MessageBox(None, excep, msg, 0)
+def showAlert(msg, tittle, sound, mode):
+
+    def tocarmusica():
+        playsound(sound)
+
+    def mostrarAlerta():
+        MessageBox = ctypes.windll.user32.MessageBoxW
+        MessageBox(None, msg, tittle, 0)
+
+    if mode == "s":
+        threadSound = Thread(target=tocarmusica)
+        threadSound.start()
+    if mode == "ms":
+        threadSound = Thread(target=tocarmusica)
+        trhedMessage = Thread(target=mostrarAlerta)
+        threadSound.start()
+        trhedMessage.start()
+
+
+def toggleWidgets(father, children, mode):
+
+    try:
+        if (mode == "r"):
+            father.remove_widget(children)
+            print("REMOVENDO")
+        elif (mode == "a"):
+            father.add_widget(children)
+            print("ADICIONANDO")
+
+
+    except Exception as excep:
+        print(excep)
+
 
 
 
