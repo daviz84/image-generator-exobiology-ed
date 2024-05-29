@@ -205,7 +205,7 @@ def gerarImagem():
 
         # PREENCHE IMAGEM COM AS INFORMAÇÕES
         printscreen = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
-        mold = Image.open('resources/fundo_colorido_amarelo.png')
+        mold = Image.open('resources/fundo_colorido_azul.png')
         moldStyle = Image.open('resources/molde_dna.png')
         efeitoVidro = Image.open('resources/efeito_vidro.png')
         maskVidro = Image.open('resources/efeito_vidro_mask.png')
@@ -264,6 +264,7 @@ class UpdatePos(BoxLayout):
         self.size_hint = (None, None)
 
     def on_touch_down(self, touch):
+        print(touch)
 
         x = int(touch.pos[0])
         y = int(touch.pos[1])
