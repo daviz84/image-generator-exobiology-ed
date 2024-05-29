@@ -205,16 +205,25 @@ def gerarImagem():
 
         # PREENCHE IMAGEM COM AS INFORMAÇÕES
         printscreen = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
-        mold = Image.open('gallery/imagemMolde.png')
+        mold = Image.open('resources/fundo_colorido_amarelo.png')
+        moldStyle = Image.open('resources/molde_dna.png')
+        efeitoVidro = Image.open('resources/efeito_vidro.png')
+        maskVidro = Image.open('resources/efeito_vidro_mask.png')
         mold_draw = ImageDraw.Draw(mold)
-        mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 26)
-        mold_fontSmall = ImageFont.truetype('fonts/Glitch inside.otf', 12)
-        mold_draw.text((258, 53),
+        mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 32)
+        mold_fontSmall = ImageFont.truetype('fonts/Glitch inside.otf', 14)
+        mold_draw.text((18, 26),
                        f"{value_txtinputJournal['Species_Localised']}\n {value_txtinputJournal['Variant_Localised'].split('- ')[1]} ",
                        font=mold_font)
-        mold_draw.text((360, 115), f"{resultRequisitionNameSystem}", font=mold_fontSmall)
+        mold_draw.text((80, 128), f"{resultRequisitionNameSystem}", font=mold_fontSmall)
+
+        mold.paste(moldStyle, (-1,-1), mask=moldStyle)
+
+        mold.paste(efeitoVidro, (0,0), mask=maskVidro)
 
         mold.save(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
+
+
 
         colarMolde(printscreen, mold, (0, 0))
 
