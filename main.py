@@ -276,11 +276,11 @@ class UpdatePos(BoxLayout):
                 resolX = root.winfo_screenwidth()
                 resolY = root.winfo_screenheight()
 
-                proporcaoX = (resolX * 1.18) / 800
-                proporcaoY = (resolY * 1.6) / 600
+                proporcaoX = (resolX * 1.138) / 800
+                proporcaoY = (resolY * 1.7) / 600
 
-                x = int(((x - 50) * proporcaoX) - 220)
-                y = int(-((y - 450) * proporcaoY) - 185)
+                x = int(((x - 50) * proporcaoX) - 43)
+                y = int(-((y - 450) * proporcaoY) - 282)
 
                 txtInputCoord.text = f"{x, y}"
                 colarMolde(imgTemp, mold, (x, y))
