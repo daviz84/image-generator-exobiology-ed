@@ -68,6 +68,7 @@ class ButtonReload(Button):
     def on_press(self):
         reloadWidgets()
 
+
 class ButtonReplace(Button):
     def __init__(self):
         super(ButtonReplace, self).__init__()
@@ -77,10 +78,44 @@ class ButtonReplace(Button):
         self.text = "SUBSTITUIR"
 
 
+class SmallButton(Button):
+
+    def __init__(self, color, txt):
+        super(SmallButton, self).__init__()
+        self.size_hint = (None, None)
+        self.height = 35
+        self.width = 50
+        self.background_color = color
+        self.text = txt
+        self.disabled = True
+
+    def on_press(self):
+        try:
+            imgTemp = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
+
+        except FileNotFoundError:
+            print("AGUARDANDO REGISTRO DO JOURNAL")
+
+        resetarBotoesPequenos("t")
+        self.disabled = True
+
+        match self.text:
+
+            case "R":
+                colarMolde(imgTemp, gerarMolde("R"), currentPosition)
+            case "G":
+                colarMolde(imgTemp, gerarMolde("G"), currentPosition)
+            case "B":
+                colarMolde(imgTemp, gerarMolde("B"), currentPosition)
+            case "Y":
+                colarMolde(imgTemp, gerarMolde("Y"), currentPosition)
+
 
 # INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
 
 Window.clearcolor = "white"
+
+allSmallButton = []
 
 layoutMain = BoxLayout()
 layoutMain.orientation = "vertical"
@@ -125,6 +160,11 @@ txtInputCoord.size_hint = (0, 0)
 txtInputCoord.width = 100
 txtInputCoord.height = 50
 
+layoutSmallButtons = BoxLayout()
+layoutSmallButtons.size_hint = (None, None)
+layoutSmallButtons.height = 35
+layoutSmallButtons.width = 100
+
 buttonReplace = ButtonReplace()
 
 root = tk.Tk()
@@ -132,6 +172,9 @@ root = tk.Tk()
 #RETORNA O DIRETORIO DO USUARIO E COMPLEMENTA COM A PASTA DE REGISTROS DO PROGRAMA
 pathOrigin = path.join(path.expanduser("~"), "Documents/image-generator-exobiology-ed").replace("\\", "/")
 pathED = path.join(path.expanduser("~"), "Saved Games/Frontier Developments/Elite Dangerous").replace("\\", "/")
+
+currentPosition = (0,0) #UTILIZADA PARA MUDAR A COR DE FUNDO DO MOLDE NOS BOTÕES PEQUENOS
+
 
 class MeuAplicativo(App):
 
@@ -143,6 +186,13 @@ class MeuAplicativo(App):
         buttonReload = ButtonReload()
 
         buttonSave = ButtonSave()
+
+        smallButtonRed = SmallButton("#ff4d42", "R")
+        smallButtonRed.disabled = True
+        smallButtonGreen = SmallButton("#2e9800", "G")
+        smallButtonBlue = SmallButton("#4981ff", "B")
+        smallButtonYellow = SmallButton("#f8ff07", "Y")
+        allSmallButton.append([smallButtonRed, smallButtonGreen, smallButtonBlue, smallButtonYellow])
 
         layoutBottomOptions.add_widget(buttonReload)
         layoutBottomOptions.add_widget(buttonSave)
@@ -156,7 +206,13 @@ class MeuAplicativo(App):
         layoutForm.add_widget(txtInputJournal)
         layoutForm.add_widget(buttonGerar)
 
+        layoutSmallButtons.add_widget(smallButtonRed)
+        layoutSmallButtons.add_widget(smallButtonGreen)
+        layoutSmallButtons.add_widget(smallButtonBlue)
+        layoutSmallButtons.add_widget(smallButtonYellow)
+
         layoutMain.add_widget(layoutForm)
+        layoutMain.add_widget(layoutSmallButtons)
 
         layoutMain.add_widget(UpdatePos())  # BoxLayout adicionado para manter a posição do mouse atualizada
 
@@ -183,71 +239,71 @@ class MeuAplicativo(App):
             print("ARQUIVO JÁ CRIADO")
 
 
+def gerarMolde(color="R"):
+    value_txtinputJournal = json.loads(txtInputJournal.text)
+
+    # REQUISIÇÃO NOME DO SISTEMA PELO CODIGO DO JOURNAL (RETORNA UM JSON STRING)
+    requisitionNameSystem = requests.get(
+        f"https://www.edsm.net/typeahead/systems/query/{value_txtinputJournal['SystemAddress']}")
+    resultRequisitionNameSystem = requisitionNameSystem.json()[0]["value"]
+
+    # PREENCHE IMAGEM COM AS INFORMAÇÕES
+    mold = Image.open(f'resources/fundo_colorido_{color}.png')
+    moldStyle = Image.open('resources/molde_dna.png')
+    efeitoVidro = Image.open('resources/efeito_vidro.png')
+    maskVidro = Image.open('resources/efeito_vidro_mask.png')
+    mold_draw = ImageDraw.Draw(mold)
+    mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 32)
+    mold_fontSmall = ImageFont.truetype('fonts/Glitch inside.otf', 14)
+    mold_draw.text((18, 26),
+                   f"{value_txtinputJournal['Species_Localised']}\n {value_txtinputJournal['Variant_Localised'].split('- ')[1]} ",
+                   font=mold_font)
+    mold_draw.text((80, 128), f"{resultRequisitionNameSystem}", font=mold_fontSmall)
+
+    mold.paste(moldStyle, (-1, -1), mask=moldStyle)
+
+    mold.paste(efeitoVidro, (0, 0), mask=maskVidro)
+
+    mold.save(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
+
+    return Image.open(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
+
 
 @mainthread
 def gerarImagem():
-
     try:
-
-        value_txtinputJournal = json.loads(txtInputJournal.text)
-
-        # REQUISIÇÃO NOME DO SISTEMA PELO CODIGO DO JOURNAL (RETORNA UM JSON STRING)
-        requisitionNameSystem = requests.get(
-            f"https://www.edsm.net/typeahead/systems/query/{value_txtinputJournal['SystemAddress']}")
-        resultRequisitionNameSystem = requisitionNameSystem.json()[0]["value"]
+        imagemMoldeEscrito = gerarMolde()
 
         # CAPTURA O MONITOR PRINCIPAL E SALVA COMO ARQUIVO "TEMPORARIO"
         imagePrint = pyscreenshot.grab()
         imagePrint.save(f'{pathOrigin}/gallery/imgTemp.png')
 
-        imageEdit.source = 'gallery/imgTemp.png'
-        imageEdit.reload()
-
-        # PREENCHE IMAGEM COM AS INFORMAÇÕES
         printscreen = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
-        mold = Image.open('resources/fundo_colorido_azul.png')
-        moldStyle = Image.open('resources/molde_dna.png')
-        efeitoVidro = Image.open('resources/efeito_vidro.png')
-        maskVidro = Image.open('resources/efeito_vidro_mask.png')
-        mold_draw = ImageDraw.Draw(mold)
-        mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 32)
-        mold_fontSmall = ImageFont.truetype('fonts/Glitch inside.otf', 14)
-        mold_draw.text((18, 26),
-                       f"{value_txtinputJournal['Species_Localised']}\n {value_txtinputJournal['Variant_Localised'].split('- ')[1]} ",
-                       font=mold_font)
-        mold_draw.text((80, 128), f"{resultRequisitionNameSystem}", font=mold_fontSmall)
 
-        mold.paste(moldStyle, (-1,-1), mask=moldStyle)
-
-        mold.paste(efeitoVidro, (0,0), mask=maskVidro)
-
-        mold.save(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
-
-
-
-        colarMolde(printscreen, mold, (0, 0))
+        colarMolde(printscreen, imagemMoldeEscrito, (0, 0))
+        resetarBotoesPequenos("t")
 
     except json.decoder.JSONDecodeError as JSONDecodeError:
-
         showAlert(JSONDecodeError.msg, "CÓDIGO DO JOURNAL INVÁLIDO", "fonts/error-5-199276.mp3", "ms")
         print("CÓDIGO DO JOURNAL INVÁLIDO")
-        return None
+        return None  #ENCERRA A FUNÇÃO
 
     try:
         Window.size = (800, 600)
         layoutMain.add_widget(layoutImage)
+
     except kivy.uix.widget.WidgetException:
         print("WIDGET JÁ ADICIONADO")
-
+        return None  #ENCERRA A FUNÇÃO
 
 
 def colarMolde(printscreen, mold, positions):
+
     printscreen.paste(mold, positions, mask=mold)
     printscreen.save(f'{pathOrigin}/gallery/imagemMesclada.png')
 
     imageEdit.source = f'{pathOrigin}/gallery/imagemMesclada.png'
     imageEdit.reload()
-
 
 def atualizaPosicoes(tuple):
     #FUNÇÃO UTILITÁRIA PARA TRANSFORMAR EM INTEIRO (PARA O CLICK E PARA O CÁLCULO DE PROPORÇÃO)
@@ -285,6 +341,8 @@ class UpdatePos(BoxLayout):
 
                 txtInputCoord.text = f"{x, y}"
                 colarMolde(imgTemp, mold, (x, y))
+                global currentPosition
+                currentPosition = (x,y)
 
         except FileNotFoundError:
             print("AGUARDANDO REGISTRO DO JOURNAL")
@@ -364,9 +422,10 @@ def reloadWidgets():
     txtInputJournal.text = ""
     toggleWidgets(layoutBottomOptions, buttonReplace, "r")
     layoutBottom.spacing = 400
+    resetarBotoesPequenos("r")
+
 
 def createObserverKeyboard():
-
     def on_presskeyboard(key):
         if key == Key.f2:
             gerarImagem()
@@ -374,8 +433,8 @@ def createObserverKeyboard():
     listener = Listener(on_press=on_presskeyboard)
     listener.start()
 
-def showAlert(msg, tittle, sound, mode):
 
+def showAlert(msg, tittle, sound, mode):
     def tocarmusica():
         playsound(sound)
 
@@ -394,7 +453,6 @@ def showAlert(msg, tittle, sound, mode):
 
 
 def toggleWidgets(father, children, mode):
-
     try:
         if (mode == "r"):
             father.remove_widget(children)
@@ -407,7 +465,18 @@ def toggleWidgets(father, children, mode):
     except Exception as excep:
         print(excep)
 
+def resetarBotoesPequenos(mode="t"):
 
+    for button in allSmallButton[0]:
+
+
+        if mode == "t":
+            if button.disabled == True:
+                button.disabled = False
+            else:
+                button.disabled = False
+        elif mode == "r":
+            button.disabled = True
 
 
 if __name__ == "__main__":
