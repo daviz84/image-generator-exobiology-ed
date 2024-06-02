@@ -31,6 +31,7 @@ import tkinter as tk
 from pynput.keyboard import Key, Listener
 import ctypes
 
+
 class ButtonGerar(Button):
 
     def __init__(self):
@@ -90,6 +91,8 @@ class SmallButton(Button):
         self.disabled = True
 
     def on_press(self):
+        print(currentPosition["pos"])
+
         try:
             imgTemp = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
 
@@ -99,16 +102,21 @@ class SmallButton(Button):
         resetarBotoesPequenos("t")
         self.disabled = True
 
+
         match self.text:
 
             case "R":
-                colarMolde(imgTemp, gerarMolde("R"), currentPosition)
+                currentMold["color"] = "R"
+                colarMolde(imgTemp, gerarMolde("R"), currentPosition["pos"], currentMold["color"])
             case "G":
-                colarMolde(imgTemp, gerarMolde("G"), currentPosition)
+                currentMold["color"] = "G"
+                colarMolde(imgTemp, gerarMolde("G"), currentPosition["pos"], currentMold["color"])
             case "B":
-                colarMolde(imgTemp, gerarMolde("B"), currentPosition)
+                currentMold["color"] = "B"
+                colarMolde(imgTemp, gerarMolde("B"), currentPosition["pos"], currentMold["color"])
             case "Y":
-                colarMolde(imgTemp, gerarMolde("Y"), currentPosition)
+                currentMold["color"] = "Y"
+                colarMolde(imgTemp, gerarMolde("Y"), currentPosition["pos"], currentMold["color"])
 
 
 # INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
@@ -173,7 +181,8 @@ root = tk.Tk()
 pathOrigin = path.join(path.expanduser("~"), "Documents/image-generator-exobiology-ed").replace("\\", "/")
 pathED = path.join(path.expanduser("~"), "Saved Games/Frontier Developments/Elite Dangerous").replace("\\", "/")
 
-currentPosition = (0,0) #UTILIZADA PARA MUDAR A COR DE FUNDO DO MOLDE NOS BOTÕES PEQUENOS
+currentPosition = {'pos': (0, 0)}  #UTILIZADA PARA MUDAR A COR DE FUNDO DO MOLDE NOS BOTÕES PEQUENOS
+currentMold = {'color': 'R'}  #UTILIZADA PARA MUDAR A COR DE FUNDO DO MOLDE NOS BOTÕES PEQUENOS
 
 
 class MeuAplicativo(App):
@@ -253,7 +262,7 @@ def gerarMolde(color="R"):
     efeitoVidro = Image.open('resources/efeito_vidro.png')
     maskVidro = Image.open('resources/efeito_vidro_mask.png')
     mold_draw = ImageDraw.Draw(mold)
-    mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 32)
+    mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 29)
     mold_fontSmall = ImageFont.truetype('fonts/Glitch inside.otf', 14)
     mold_draw.text((18, 26),
                    f"{value_txtinputJournal['Species_Localised']}\n {value_txtinputJournal['Variant_Localised'].split('- ')[1]} ",
@@ -280,7 +289,8 @@ def gerarImagem():
 
         printscreen = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
 
-        colarMolde(printscreen, imagemMoldeEscrito, (0, 0))
+        colarMolde(printscreen, imagemMoldeEscrito, (0, 0), currentMold["color"])
+        currentPosition["pos"] = (0, 0)
         resetarBotoesPequenos("t")
 
     except json.decoder.JSONDecodeError as JSONDecodeError:
@@ -297,13 +307,57 @@ def gerarImagem():
         return None  #ENCERRA A FUNÇÃO
 
 
-def colarMolde(printscreen, mold, positions):
-
+def colarMolde(printscreen, mold, positions, color="R"):
     printscreen.paste(mold, positions, mask=mold)
     printscreen.save(f'{pathOrigin}/gallery/imagemMesclada.png')
 
+    gerarMiniatura(printscreen, positions, color)
+
     imageEdit.source = f'{pathOrigin}/gallery/imagemMesclada.png'
     imageEdit.reload()
+
+def gerarMiniatura(img, positions, color="R"):
+
+    pontaUmX = positions[0] - 534 # -100 da plaquinha
+    pontaUmY = positions[1] - 50
+    pontaDoisX = positions[0] + 435 # +100 da plaquinha
+    pontaDoisY = positions[1] + 500
+
+    if pontaUmX < 0:
+        while pontaUmX <= 0:
+            pontaUmX = pontaUmX + 25
+            pontaDoisX = pontaDoisX + 25
+
+    if pontaDoisX > img.size[0]:
+        while pontaDoisX >= img.size[0]:
+            pontaUmX = pontaUmX - 25
+            pontaDoisX = pontaDoisX - 25
+
+    if pontaUmY < 0:
+        while pontaUmY <= 0:
+            pontaUmY = pontaUmY + 25
+            pontaDoisY = pontaDoisY + 25
+
+    if pontaDoisY > img.size[1]:
+        while pontaDoisY >= img.size[1]:
+            pontaUmY = pontaUmY - 25
+            pontaDoisY = pontaDoisY - 25
+
+    imgCortada = img.crop((pontaUmX, pontaUmY, pontaDoisX, pontaDoisY))
+
+    bordaMolde = Image.open(f'resources/borda_miniatura_M.png')
+    bordaColorida = Image.open(f'resources/borda_miniatura_{color}.png')
+
+    bordaMolde.paste(imgCortada, (70,37))
+
+    bordaMolde.paste(bordaColorida, (0,0), bordaColorida)
+
+    imgCortada.save(f'{pathOrigin}/gallery/imagemCortada.png')
+    bordaMolde.save(f'{pathOrigin}/gallery/imagemCortadaComBorda.png')
+
+
+
+
 
 def atualizaPosicoes(tuple):
     #FUNÇÃO UTILITÁRIA PARA TRANSFORMAR EM INTEIRO (PARA O CLICK E PARA O CÁLCULO DE PROPORÇÃO)
@@ -329,7 +383,8 @@ class UpdatePos(BoxLayout):
             imgTemp = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
             mold = Image.open(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
 
-            if (x >= 50 and x <= 750) and (y >= 100 and y <= 450):
+            if (50 <= x <= 750) and (100 <= y <= 450) and (Window.size == (800, 600)):
+
                 resolX = root.winfo_screenwidth()
                 resolY = root.winfo_screenheight()
 
@@ -340,9 +395,11 @@ class UpdatePos(BoxLayout):
                 y = int(-((y - 450) * proporcaoY) - 282)
 
                 txtInputCoord.text = f"{x, y}"
-                colarMolde(imgTemp, mold, (x, y))
-                global currentPosition
-                currentPosition = (x,y)
+
+                colarMolde(imgTemp, mold, (x, y), currentMold["color"])
+                currentPosition["pos"] = (x, y)
+
+
 
         except FileNotFoundError:
             print("AGUARDANDO REGISTRO DO JOURNAL")
@@ -423,6 +480,7 @@ def reloadWidgets():
     toggleWidgets(layoutBottomOptions, buttonReplace, "r")
     layoutBottom.spacing = 400
     resetarBotoesPequenos("r")
+    currentPosition["pos"] = (0,0)
 
 
 def createObserverKeyboard():
@@ -465,10 +523,9 @@ def toggleWidgets(father, children, mode):
     except Exception as excep:
         print(excep)
 
+
 def resetarBotoesPequenos(mode="t"):
-
     for button in allSmallButton[0]:
-
 
         if mode == "t":
             if button.disabled == True:
