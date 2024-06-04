@@ -542,10 +542,12 @@ def cria_watchdog():
 
 
 def analisa_journal(arquivo_modificado):
-    dateNow = datetime.date.today()
+
+    data_hoje = datetime.datetime.now()
+    data_ontem = (data_hoje - datetime.timedelta(days=1))
     arquivo_modificado = arquivo_modificado.replace('\\', '/')
 
-    if f"Journal.{dateNow}" in arquivo_modificado:
+    if f"Journal.{data_hoje.strftime("%Y-%m-%d")}" in arquivo_modificado or f"Journal.{data_ontem.strftime("%Y-%m-%d")}" in arquivo_modificado:
 
         journal_atualizado = open(arquivo_modificado, "r", errors='replace')
         journal_lido = journal_atualizado.readlines()
