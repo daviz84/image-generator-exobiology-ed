@@ -32,296 +32,420 @@ from pynput.keyboard import Key, Listener
 import ctypes
 
 
-class ButtonGerar(Button):
+class Botaogerar(Button):
 
     def __init__(self):
-        super(ButtonGerar, self).__init__()
+        super(Botaogerar, self).__init__()
         self.text = "GERAR IMAGEM"
         self.background_color = "#282828"
         self.size_hint = (None, None)
         self.width = 250
 
     def on_press(self):
-        gerarImagem()
+        gerar_imagem()
 
 
-class ButtonSave(Button):
+class Botaoregistrar(Button):
 
     def __init__(self):
-        super(ButtonSave, self).__init__()
+        super(Botaoregistrar, self).__init__()
         self.size_hint = (None, None)
         self.height = 50
         self.background_color = "green"
         self.text = "SALVAR"
 
     def on_press(self):
-        registrarDescoberta()
+        registrar_descoberta()
 
 
-class ButtonReload(Button):
+class Botaorecarregar(Button):
     def __init__(self):
-        super(ButtonReload, self).__init__()
+        super(Botaorecarregar, self).__init__()
         self.size_hint = (None, None)
         self.height = 50
         self.background_color = "red"
         self.text = "LIMPAR"
 
     def on_press(self):
-        reloadWidgets()
+        recarregar_widgets()
 
 
-class ButtonReplace(Button):
+class Botaosubstituir(Button):
     def __init__(self):
-        super(ButtonReplace, self).__init__()
+        super(Botaosubstituir, self).__init__()
         self.size_hint = (None, None)
         self.height = 50
         self.background_color = "yellow"
         self.text = "SUBSTITUIR"
 
+    def on_press(self):
+        registro_journal = json.loads(txt_entrada_journal.text)
+        especie = registro_journal['Variant_Localised']
 
-class SmallButton(Button):
+        imagem_com_borda_atual = Image.open(f'{caminho_fonte}/gallery/imagemCortadaComBorda.png')
+        imagem_com_borda_atual.save(f'{caminho_fonte}/gallery/REGISTRO DE ESPECIES/{especie}.png')
 
-    def __init__(self, color, txt):
-        super(SmallButton, self).__init__()
+        recarregar_widgets()
+        layout_rodape.spacing = 400
+        alterar_widgets(layout_rodape_botoes, botao_substituir, "r")
+
+
+class Botaopequenocolorido(Button):
+
+    def __init__(self, cor, txt):
+        super(Botaopequenocolorido, self).__init__()
         self.size_hint = (None, None)
         self.height = 35
         self.width = 50
-        self.background_color = color
+        self.background_color = cor
         self.text = txt
         self.disabled = True
 
     def on_press(self):
-        print(currentPosition["pos"])
 
         try:
-            imgTemp = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
+            img_temp = Image.open(f'{caminho_fonte}/gallery/imgTemp.png')
 
         except FileNotFoundError:
             print("AGUARDANDO REGISTRO DO JOURNAL")
 
-        resetarBotoesPequenos("t")
+        resetar_botoes_pequenos("t")
         self.disabled = True
-
 
         match self.text:
 
             case "R":
-                currentMold["color"] = "R"
-                colarMolde(imgTemp, gerarMolde("R"), currentPosition["pos"], currentMold["color"])
+                molde_atual["cor"] = "R"
+                colar_molde(img_temp, gerar_molde("R"), posicao_atual["pos"], molde_atual["cor"])
             case "G":
-                currentMold["color"] = "G"
-                colarMolde(imgTemp, gerarMolde("G"), currentPosition["pos"], currentMold["color"])
+                molde_atual["cor"] = "G"
+                colar_molde(img_temp, gerar_molde("G"), posicao_atual["pos"], molde_atual["cor"])
             case "B":
-                currentMold["color"] = "B"
-                colarMolde(imgTemp, gerarMolde("B"), currentPosition["pos"], currentMold["color"])
+                molde_atual["cor"] = "B"
+                colar_molde(img_temp, gerar_molde("B"), posicao_atual["pos"], molde_atual["cor"])
             case "Y":
-                currentMold["color"] = "Y"
-                colarMolde(imgTemp, gerarMolde("Y"), currentPosition["pos"], currentMold["color"])
+                molde_atual["cor"] = "Y"
+                colar_molde(img_temp, gerar_molde("Y"), posicao_atual["pos"], molde_atual["cor"])
+
+
+class Botaopequenoalterarimagem(Button):
+
+    def __init__(self, txt):
+        super(Botaopequenoalterarimagem, self).__init__()
+        self.size_hint = (None, None)
+        self.height = 35
+        self.width = 50
+        self.background_color = "black"
+        self.text = txt
+        self.disabled = True
+
+    def on_press(self):
+
+        if "imagemMesclada" in editor_imagem.source:
+            editor_imagem.source = f'{caminho_fonte}/gallery/imagemCortadaComBorda.png'
+            editor_imagem.reload()
+        else:
+            editor_imagem.source = f'{caminho_fonte}/gallery/imagemMesclada.png'
+            editor_imagem.reload()
+
+
+class Botaopequenoalterarjournal(Button):
+
+    def __init__(self, txt, modo):
+        super(Botaopequenoalterarjournal, self).__init__()
+        self.size_hint = (None, None)
+        self.height = 50
+        self.width = 35
+        self.background_color = "black"
+        self.text = txt
+        self.modo = modo
+        if modo == "D":
+            self.disabled = True
+
+    def on_press(self):
+        registro_journais_temporarios = open(f'{caminho_fonte}/journaisTemporarios.json', 'r')
+        registro_journais_temporarios_json = json.loads(registro_journais_temporarios.read())
+
+        try:
+            match self.modo:
+
+                case "U":
+
+                    botao_pequeno_alterar_jornal_d.disabled = False
+                    contagem = contagem_atual_journal_temporario["contagem"] - 1
+
+                    if contagem >= 0:
+                        txt_entrada_journal.text = registro_journais_temporarios_json["journaisTemporarios"][contagem]
+                        contagem_atual_journal_temporario["contagem"] = contagem
+
+                    if contagem == 0:
+                        botao_pequeno_alterar_jornal_u.disabled = True
+
+                case "D":
+
+                    botao_pequeno_alterar_jornal_u.disabled = False
+                    contagem = contagem_atual_journal_temporario["contagem"] + 1
+
+                    if contagem >= 2:
+                        botao_pequeno_alterar_jornal_d.disabled = True
+
+                    txt_entrada_journal.text = registro_journais_temporarios_json["journaisTemporarios"][contagem]
+                    contagem_atual_journal_temporario["contagem"] = contagem
+
+        except IndexError:
+            print("INDEX NÃO ENCONTRADO")
 
 
 # INSTANCIAÇÃO DOS ELEMENTOS GRÁFICOS
 
 Window.clearcolor = "white"
 
-allSmallButton = []
+layout_principal = BoxLayout()
+layout_principal.orientation = "vertical"
+layout_principal.padding = (50, 50, 50, 50)
+layout_principal.minimum_height = 600
 
-layoutMain = BoxLayout()
-layoutMain.orientation = "vertical"
-layoutMain.padding = (50, 50, 50, 50)
-layoutMain.minimum_height = 600
+layout_formulario = BoxLayout()
+layout_formulario.width = 700
+layout_formulario.height = 100
+layout_formulario.size_hint = (None, None)
 
-txtInputJournal = TextInput()
-txtInputJournal.id = "idTxtInput"
+txt_entrada_journal = TextInput()
+botao_gerar = Botaogerar()
 
-buttonGerar = Button()
+layout_botoes_pequenos_alterar_journal = BoxLayout()
+layout_botoes_pequenos_alterar_journal.orientation = "vertical"
+layout_botoes_pequenos_alterar_journal.size_hint = (None, None)
+layout_botoes_pequenos_alterar_journal.height = 100
+layout_botoes_pequenos_alterar_journal.width = 50
 
-layoutForm = BoxLayout()
-layoutForm.width = 700
-layoutForm.height = 100
-layoutForm.size_hint = (None, None)
+botao_pequeno_alterar_jornal_u = Botaopequenoalterarjournal("-", "U")  #UPPER (SUBIR)
+botao_pequeno_alterar_jornal_d = Botaopequenoalterarjournal("+", "D")  #DOWN (DESCER)
 
-layoutImage = BoxLayout()
-layoutImage.width = 700
-layoutImage.height = 400
-layoutImage.size_hint = (None, None)
-layoutImage.orientation = "vertical"
+layout_botoes_pequenos = BoxLayout()
+layout_botoes_pequenos.size_hint = (None, None)
+layout_botoes_pequenos.width = 700
+layout_botoes_pequenos.height = 35
+layout_botoes_pequenos.orientation = "horizontal"
+layout_botoes_pequenos.spacing = 400
 
-imageEdit = AsyncImage()
-imageEdit.size_hint = (None, None)
-imageEdit.width = 700
-imageEdit.height = 350
-imageEdit.padding = (0, 0, 0, 0)
-imageEdit.fit_mode = "fill"
+layout_botoes_pequenos_cor = BoxLayout()
+layout_botoes_pequenos_cor.size_hint = (None, None)
+layout_botoes_pequenos_cor.height = 35
+layout_botoes_pequenos_cor.width = 200
 
-layoutBottom = BoxLayout()
-layoutBottom.size_hint = (None, None)
-layoutBottom.width = 700
-layoutBottom.height = 50
-layoutBottom.spacing = 400
+botao_pequeno_red = Botaopequenocolorido("#ff4d42", "R")
+botao_pequeno_red.disabled = True
+botao_pequeno_green = Botaopequenocolorido("#2e9800", "G")
+botao_pequeno_blue = Botaopequenocolorido("#4981ff", "B")
+botao_pequeno_yellow = Botaopequenocolorido("#f8ff07", "Y")
 
-layoutBottomOptions = BoxLayout()
-layoutBottomOptions.size_hint = (None, None)
+layout_botoes_pequenos_alterar_imagem = BoxLayout()
+layout_botoes_pequenos_alterar_imagem.size_hint = (None, None)
+layout_botoes_pequenos_alterar_imagem.width = 100
+layout_botoes_pequenos_alterar_imagem.height = 35
 
-txtInputCoord = TextInput()
-txtInputCoord.disabled = True
-txtInputCoord.size_hint = (0, 0)
-txtInputCoord.width = 100
-txtInputCoord.height = 50
+botao_pequeno_alterar_imagem_u = Botaopequenoalterarimagem("<")
+botao_pequeno_alterar_imagem_r = Botaopequenoalterarimagem(">")
 
-layoutSmallButtons = BoxLayout()
-layoutSmallButtons.size_hint = (None, None)
-layoutSmallButtons.height = 35
-layoutSmallButtons.width = 100
+layout_imagem = BoxLayout()
+layout_imagem.width = 700
+layout_imagem.height = 400
+layout_imagem.size_hint = (None, None)
+layout_imagem.orientation = "vertical"
 
-buttonReplace = ButtonReplace()
+editor_imagem = AsyncImage()
+editor_imagem.size_hint = (None, None)
+editor_imagem.width = 700
+editor_imagem.height = 350
+editor_imagem.padding = (0, 0, 0, 0)
+editor_imagem.fit_mode = "fill"
+
+layout_rodape = BoxLayout()
+layout_rodape.size_hint = (None, None)
+layout_rodape.width = 700
+layout_rodape.height = 50
+layout_rodape.spacing = 400
+
+txt_entrada_coord = TextInput()
+txt_entrada_coord.disabled = True
+txt_entrada_coord.size_hint = (0, 0)
+txt_entrada_coord.width = 100
+txt_entrada_coord.height = 50
+
+layout_rodape_botoes = BoxLayout()
+layout_rodape_botoes.size_hint = (None, None)
+
+botao_recarregar = Botaorecarregar()
+botao_registrar = Botaoregistrar()
+botao_substituir = Botaosubstituir()
 
 root = tk.Tk()
 
 #RETORNA O DIRETORIO DO USUARIO E COMPLEMENTA COM A PASTA DE REGISTROS DO PROGRAMA
-pathOrigin = path.join(path.expanduser("~"), "Documents/image-generator-exobiology-ed").replace("\\", "/")
-pathED = path.join(path.expanduser("~"), "Saved Games/Frontier Developments/Elite Dangerous").replace("\\", "/")
+caminho_fonte = path.join(path.expanduser("~"), "Documents/image-generator-exobiology-ed").replace("\\", "/")
 
-currentPosition = {'pos': (0, 0)}  #UTILIZADA PARA MUDAR A COR DE FUNDO DO MOLDE NOS BOTÕES PEQUENOS
-currentMold = {'color': 'R'}  #UTILIZADA PARA MUDAR A COR DE FUNDO DO MOLDE NOS BOTÕES PEQUENOS
+#RETORNA O DIRETORIO DO USUARIO E COMPLEMENTA COM A PASTA DE REGISTROS DOS JOURNAIS
+caminho_ed_journais = path.join(path.expanduser("~"), "Saved Games/Frontier Developments/Elite Dangerous").replace("\\",
+                                                                                                                   "/")
+
+#VARIÁVEIS DE CONTROLE
+todos_botoes_pequenos = []
+todos_botoes_pequenos.append(
+    [botao_pequeno_red, botao_pequeno_green, botao_pequeno_blue, botao_pequeno_yellow, botao_pequeno_alterar_imagem_u,
+     botao_pequeno_alterar_imagem_r])
+posicao_atual = {'pos': (0, 0)}  #UTILIZADA PARA MUDAR A COR DE FUNDO DO MOLDE NOS BOTÕES PEQUENOS
+molde_atual = {'cor': 'R'}  #UTILIZADA PARA MUDAR A COR DE FUNDO DO MOLDE NOS BOTÕES PEQUENOS
+contagem_atual_journal_temporario = {"contagem": 3}  # INICIADO COM 1 A MAIS POR QUESTÃO VISUAL
 
 
-class MeuAplicativo(App):
+class Meuaplicativo(App):
 
     def build(self):
-        self.title = "Image Generation Exobiology ED"
+        self.title = "Gerador de Imagens para Exobiologia ED"
 
-        buttonGerar = ButtonGerar()
+        #MONTAGEM DO LAYOUT PRINCIPAL DO PROGRAMA
 
-        buttonReload = ButtonReload()
+        layout_botoes_pequenos_alterar_journal.add_widget(botao_pequeno_alterar_jornal_u)
+        layout_botoes_pequenos_alterar_journal.add_widget(botao_pequeno_alterar_jornal_d)
 
-        buttonSave = ButtonSave()
+        layout_botoes_pequenos_alterar_imagem.add_widget(botao_pequeno_alterar_imagem_u)
+        layout_botoes_pequenos_alterar_imagem.add_widget(botao_pequeno_alterar_imagem_r)
 
-        smallButtonRed = SmallButton("#ff4d42", "R")
-        smallButtonRed.disabled = True
-        smallButtonGreen = SmallButton("#2e9800", "G")
-        smallButtonBlue = SmallButton("#4981ff", "B")
-        smallButtonYellow = SmallButton("#f8ff07", "Y")
-        allSmallButton.append([smallButtonRed, smallButtonGreen, smallButtonBlue, smallButtonYellow])
+        layout_rodape_botoes.add_widget(botao_recarregar)
+        layout_rodape_botoes.add_widget(botao_registrar)
 
-        layoutBottomOptions.add_widget(buttonReload)
-        layoutBottomOptions.add_widget(buttonSave)
+        layout_rodape.add_widget(txt_entrada_coord)
+        layout_rodape.add_widget(layout_rodape_botoes)
 
-        layoutBottom.add_widget(txtInputCoord)
-        layoutBottom.add_widget(layoutBottomOptions)
+        layout_imagem.add_widget(editor_imagem)
+        layout_imagem.add_widget(layout_rodape)
 
-        layoutImage.add_widget(imageEdit)
-        layoutImage.add_widget(layoutBottom)
+        layout_formulario.add_widget(txt_entrada_journal)
+        layout_formulario.add_widget(layout_botoes_pequenos_alterar_journal)
+        layout_formulario.add_widget(botao_gerar)
 
-        layoutForm.add_widget(txtInputJournal)
-        layoutForm.add_widget(buttonGerar)
+        layout_botoes_pequenos_cor.add_widget(botao_pequeno_red)
+        layout_botoes_pequenos_cor.add_widget(botao_pequeno_green)
+        layout_botoes_pequenos_cor.add_widget(botao_pequeno_blue)
+        layout_botoes_pequenos_cor.add_widget(botao_pequeno_yellow)
 
-        layoutSmallButtons.add_widget(smallButtonRed)
-        layoutSmallButtons.add_widget(smallButtonGreen)
-        layoutSmallButtons.add_widget(smallButtonBlue)
-        layoutSmallButtons.add_widget(smallButtonYellow)
+        layout_botoes_pequenos.add_widget(layout_botoes_pequenos_cor)
+        layout_botoes_pequenos.add_widget(layout_botoes_pequenos_alterar_imagem)
 
-        layoutMain.add_widget(layoutForm)
-        layoutMain.add_widget(layoutSmallButtons)
+        layout_principal.add_widget(layout_formulario)
 
-        layoutMain.add_widget(UpdatePos())  # BoxLayout adicionado para manter a posição do mouse atualizada
+        layout_principal.add_widget(Atualizacliques())  # BoxLayout adicionado para manter a posição do mouse atualizada
 
-        return layoutMain
+        return layout_principal
 
     def on_start(self):
-        createObserverKeyboard()
+        criar_observador_teclado()
 
         #INSTANCIA E INICIA O WATCHDOG EM OUTRA THREAD (RESPONSAVEL POR MONITORAR OS REGISTROS DO JOGO - PASTAS E ARQUIVOS)
-        trhed = Thread(target=createWatchdog)
-        trhed.start()
+        thread = Thread(target=cria_watchdog)
+        thread.start()
 
-        #CRIA OS ARQUIVOS DE REGISTRO PARA ARMANEZAR AS ESPÉCIES ANALISADAS
+        #CRIA OS ARQUIVOS DE REGISTRO PARA ARMANEZAR AS ESPÉCIES ANALISADAS E JOURNAIS
         try:
-            os.mkdir(f'{pathOrigin}')
-            os.mkdir(f'{pathOrigin}/gallery')
+            os.mkdir(f'{caminho_fonte}')
+            os.mkdir(f'{caminho_fonte}/gallery')
+            os.mkdir(f'{caminho_fonte}/gallery/REGISTRO DE ESPECIES')
 
-            criarAqv = open(f'{pathOrigin}/registro.json', 'w')
-            criarAqv.write('{"especiesCatalogadas": {}}')
-            criarAqv.close()
+            arquivo_registros_especies = open(f'{caminho_fonte}/registro.json', 'w')
+            arquivo_registros_especies.write('{"especiesCatalogadas": {}}')
+            arquivo_registros_especies.close()
 
+            arquivo_journais_temporarios = open(f'{caminho_fonte}/journaisTemp.json', 'w')
+            arquivo_journais_temporarios.write('{"journaisTemporarios":["", "", ""]}')
+            arquivo_journais_temporarios.close()
 
-        except FileExistsError as excep:
+        except FileExistsError:
             print("ARQUIVO JÁ CRIADO")
 
 
-def gerarMolde(color="R"):
-    value_txtinputJournal = json.loads(txtInputJournal.text)
-
-    # REQUISIÇÃO NOME DO SISTEMA PELO CODIGO DO JOURNAL (RETORNA UM JSON STRING)
-    requisitionNameSystem = requests.get(
-        f"https://www.edsm.net/typeahead/systems/query/{value_txtinputJournal['SystemAddress']}")
-    resultRequisitionNameSystem = requisitionNameSystem.json()[0]["value"]
-
-    # PREENCHE IMAGEM COM AS INFORMAÇÕES
-    mold = Image.open(f'resources/fundo_colorido_{color}.png')
-    moldStyle = Image.open('resources/molde_dna.png')
-    efeitoVidro = Image.open('resources/efeito_vidro.png')
-    maskVidro = Image.open('resources/efeito_vidro_mask.png')
-    mold_draw = ImageDraw.Draw(mold)
-    mold_font = ImageFont.truetype('fonts/TechnoBoard.ttf', 29)
-    mold_fontSmall = ImageFont.truetype('fonts/Glitch inside.otf', 14)
-    mold_draw.text((18, 26),
-                   f"{value_txtinputJournal['Species_Localised']}\n {value_txtinputJournal['Variant_Localised'].split('- ')[1]} ",
-                   font=mold_font)
-    mold_draw.text((80, 128), f"{resultRequisitionNameSystem}", font=mold_fontSmall)
-
-    mold.paste(moldStyle, (-1, -1), mask=moldStyle)
-
-    mold.paste(efeitoVidro, (0, 0), mask=maskVidro)
-
-    mold.save(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
-
-    return Image.open(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
-
-
-@mainthread
-def gerarImagem():
+@mainthread  #NOTAÇÃO UTILIZADA PARA INDICAR QUE A FUNÇÃO SERÁ EXECUTADA NA TRHEAD PRINCIPAL, NECESSÁRIO PARA MODIFICAR OS WIDGETS DO KIVY
+def gerar_imagem():
     try:
-        imagemMoldeEscrito = gerarMolde()
+        imagem_molde_escrito = gerar_molde()
 
         # CAPTURA O MONITOR PRINCIPAL E SALVA COMO ARQUIVO "TEMPORARIO"
-        imagePrint = pyscreenshot.grab()
-        imagePrint.save(f'{pathOrigin}/gallery/imgTemp.png')
+        imagem_captura_tela = pyscreenshot.grab()
+        imagem_captura_tela.save(f'{caminho_fonte}/gallery/imgTemp.png')
 
-        printscreen = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
+        #printscreen = Image.open(f'{caminho_fonte}/gallery/imgTemp.png')
 
-        colarMolde(printscreen, imagemMoldeEscrito, (0, 0), currentMold["color"])
-        currentPosition["pos"] = (0, 0)
-        resetarBotoesPequenos("t")
+        colar_molde(imagem_captura_tela, imagem_molde_escrito, (0, 0), molde_atual["cor"])
+        posicao_atual["pos"] = (0, 0)
+        resetar_botoes_pequenos("t")
 
     except json.decoder.JSONDecodeError as JSONDecodeError:
-        showAlert(JSONDecodeError.msg, "CÓDIGO DO JOURNAL INVÁLIDO", "fonts/error-5-199276.mp3", "ms")
+        notifica_alerta(JSONDecodeError.msg, "CÓDIGO DO JOURNAL INVÁLIDO", "fonts/error-5-199276.mp3", "ms")
         print("CÓDIGO DO JOURNAL INVÁLIDO")
         return None  #ENCERRA A FUNÇÃO
 
     try:
         Window.size = (800, 600)
-        layoutMain.add_widget(layoutImage)
+        layout_principal.add_widget(layout_botoes_pequenos)
+        layout_principal.add_widget(layout_imagem)
+
 
     except kivy.uix.widget.WidgetException:
         print("WIDGET JÁ ADICIONADO")
         return None  #ENCERRA A FUNÇÃO
 
 
-def colarMolde(printscreen, mold, positions, color="R"):
-    printscreen.paste(mold, positions, mask=mold)
-    printscreen.save(f'{pathOrigin}/gallery/imagemMesclada.png')
+def gerar_molde(cor="R"):
+    registro_journal = json.loads(txt_entrada_journal.text)
 
-    gerarMiniatura(printscreen, positions, color)
+    # REQUISIÇÃO NOME DO SISTEMA PELO CODIGO DO JOURNAL (RETORNA UM JSON STRING)
+    realiza_requisicao_nome_sistema = requests.get(
+        f"https://www.edsm.net/typeahead/systems/query/{registro_journal['SystemAddress']}")
+    resultado_nome_sistema = realiza_requisicao_nome_sistema.json()[0]["value"]
 
-    imageEdit.source = f'{pathOrigin}/gallery/imagemMesclada.png'
-    imageEdit.reload()
+    # PREENCHE IMAGEM COM AS INFORMAÇÕES
+    molde = Image.open(f'resources/fundo_colorido_{cor}.png')
+    estilo_molde = Image.open('resources/molde_dna.png')
+    efeito_vidro = Image.open('resources/efeito_vidro.png')
+    mascara_vidro = Image.open('resources/efeito_vidro_mask.png')
+    molde_escrever = ImageDraw.Draw(molde)
 
-def gerarMiniatura(img, positions, color="R"):
+    molde_fonte_especie = ImageFont.truetype('fonts/TechnoBoard.ttf', 29)
+    molde_fonte_sistema = ImageFont.truetype('fonts/Glitch inside.otf', 14)
 
-    pontaUmX = positions[0] - 534 # -100 da plaquinha
-    pontaUmY = positions[1] - 50
-    pontaDoisX = positions[0] + 435 # +100 da plaquinha
-    pontaDoisY = positions[1] + 500
+    #CASO EXCEDA O NÚMERO DE CARACTERES QUE CAIBA NA PLAQUINHA
+    if len(registro_journal['Species_Localised']) > 19:
+        molde_fonte_especie = ImageFont.truetype('fonts/TechnoBoard.ttf', 25)
+
+    molde_escrever.text((18, 26),
+                        f"{registro_journal['Species_Localised']}\n{registro_journal['Variant_Localised'].split('- ')[1]} ",
+                        font=molde_fonte_especie)
+    molde_escrever.text((80, 123), f"{resultado_nome_sistema}", font=molde_fonte_sistema)
+
+    molde.paste(estilo_molde, (-1, -1), mask=estilo_molde)
+
+    molde.paste(efeito_vidro, (0, 0), mask=mascara_vidro)
+
+    molde.save(f'{caminho_fonte}/gallery/imagemMoldeEscrito.png')
+
+    return Image.open(f'{caminho_fonte}/gallery/imagemMoldeEscrito.png')
+
+
+def colar_molde(captura_tela, molde, posicoes, cor="R"):
+    captura_tela.paste(molde, posicoes, mask=molde)
+    captura_tela.save(f'{caminho_fonte}/gallery/imagemMesclada.png')
+
+    gerar_miniatura(captura_tela, posicoes, cor)
+
+    editor_imagem.source = f'{caminho_fonte}/gallery/imagemMesclada.png'
+    editor_imagem.reload()
+
+
+def gerar_miniatura(img, posicoes, cor="R"):
+    pontaUmX = posicoes[0] - 534  # -100 da plaquinha
+    pontaUmY = posicoes[1] - 50
+    pontaDoisX = posicoes[0] + 435  # +100 da plaquinha
+    pontaDoisY = posicoes[1] + 500
 
     if pontaUmX < 0:
         while pontaUmX <= 0:
@@ -343,33 +467,22 @@ def gerarMiniatura(img, positions, color="R"):
             pontaUmY = pontaUmY - 25
             pontaDoisY = pontaDoisY - 25
 
-    imgCortada = img.crop((pontaUmX, pontaUmY, pontaDoisX, pontaDoisY))
+    imagem_cortada = img.crop((pontaUmX, pontaUmY, pontaDoisX, pontaDoisY))
 
-    bordaMolde = Image.open(f'resources/borda_miniatura_M.png')
-    bordaColorida = Image.open(f'resources/borda_miniatura_{color}.png')
+    borda_molde = Image.open(f'resources/borda_miniatura_M.png')
+    borda_molde_colorida = Image.open(f'resources/borda_miniatura_{cor}.png')
 
-    bordaMolde.paste(imgCortada, (70,37))
+    borda_molde.paste(imagem_cortada, (70, 37))
 
-    bordaMolde.paste(bordaColorida, (0,0), bordaColorida)
+    borda_molde.paste(borda_molde_colorida, (0, 0), borda_molde_colorida)
 
-    imgCortada.save(f'{pathOrigin}/gallery/imagemCortada.png')
-    bordaMolde.save(f'{pathOrigin}/gallery/imagemCortadaComBorda.png')
-
-
+    #imagem_cortada.save(f'{caminho_fonte}/gallery/imagemCortada.png')
+    borda_molde.save(f'{caminho_fonte}/gallery/imagemCortadaComBorda.png')
 
 
-
-def atualizaPosicoes(tuple):
-    #FUNÇÃO UTILITÁRIA PARA TRANSFORMAR EM INTEIRO (PARA O CLICK E PARA O CÁLCULO DE PROPORÇÃO)
-    valX = int(tuple[0])
-    valY = int(tuple[1])
-
-    return (valX, valY)
-
-
-class UpdatePos(BoxLayout):
-    def __init__(self, **kwargs):
-        super(UpdatePos, self).__init__(**kwargs)
+class Atualizacliques(BoxLayout):
+    def __init__(self):
+        super(Atualizacliques, self).__init__()
         self.size = (0, 0)
         self.size_hint = (None, None)
 
@@ -380,143 +493,152 @@ class UpdatePos(BoxLayout):
         y = int(touch.pos[1])
 
         try:
-            imgTemp = Image.open(f'{pathOrigin}/gallery/imgTemp.png')
-            mold = Image.open(f'{pathOrigin}/gallery/imagemMoldeEscrito.png')
+            imagem_captura_tela = Image.open(f'{caminho_fonte}/gallery/imgTemp.png')
+            molde = Image.open(f'{caminho_fonte}/gallery/imagemMoldeEscrito.png')
 
             if (50 <= x <= 750) and (100 <= y <= 450) and (Window.size == (800, 600)):
+                resol_monitor_x = root.winfo_screenwidth()
+                resol_monitor_y = root.winfo_screenheight()
 
-                resolX = root.winfo_screenwidth()
-                resolY = root.winfo_screenheight()
-
-                proporcaoX = (resolX * 1.138) / 800
-                proporcaoY = (resolY * 1.7) / 600
+                proporcaoX = (resol_monitor_x * 1.138) / 800
+                proporcaoY = (resol_monitor_y * 1.7) / 600
 
                 x = int(((x - 50) * proporcaoX) - 43)
                 y = int(-((y - 450) * proporcaoY) - 282)
 
-                txtInputCoord.text = f"{x, y}"
+                txt_entrada_coord.text = f"{x, y}"
 
-                colarMolde(imgTemp, mold, (x, y), currentMold["color"])
-                currentPosition["pos"] = (x, y)
-
-
+                colar_molde(imagem_captura_tela, molde, (x, y), molde_atual["cor"])
+                posicao_atual["pos"] = (x, y)
 
         except FileNotFoundError:
             print("AGUARDANDO REGISTRO DO JOURNAL")
 
-
-def createWatchdog():
+def cria_watchdog():
     observer = Observer()
 
     @mainthread
     def on_modified(event):
         print(event)
-        analisaJournal(event.src_path)
+        analisa_journal(event.src_path)
 
     try:
         event_handler = FileSystemEventHandler()
         event_handler.on_modified = on_modified
 
-        #observer.schedule(event_handler, pathED, recursive=True)
-        observer.schedule(event_handler, pathOrigin, recursive=True)
+        observer.schedule(event_handler, caminho_ed_journais, recursive=True)
+        #observer.schedule(event_handler, pathOrigin, recursive=True)
         observer.start()
 
         print("MONITORANDO")
         while not Window:
             time.sleep(1)
     except FileNotFoundError as excep:
-        showAlert(excep.msg, "PASTA DE MONITORAMENTO DOS JOURNAIS NÃO ENCONTRADA", "fonts/error-5-199276.mp3", "ms")
+        notifica_alerta(excep.msg, "PASTA DE MONITORAMENTO DOS JOURNAIS NÃO ENCONTRADA", "fonts/error-5-199276.mp3",
+                        "ms")
         observer.stop()
 
     exit()
 
 
-def analisaJournal(file_modified):
+def analisa_journal(arquivo_modificado):
     dateNow = datetime.date.today()
-    file_modified = file_modified.replace('\\', '/')
+    arquivo_modificado = arquivo_modificado.replace('\\', '/')
 
-    if f"Journal.{dateNow}" in file_modified:
+    if f"Journal.{dateNow}" in arquivo_modificado:
 
-        archive = open(file_modified, "r", errors='replace')
-        archiveRead = archive.readlines()
-        archiveJournalLog = json.loads(archiveRead[len(archiveRead) - 1])
+        journal_atualizado = open(arquivo_modificado, "r", errors='replace')
+        journal_lido = journal_atualizado.readlines()
+        log_journal = json.loads(journal_lido[len(journal_lido) - 1])
+        journal_atualizado.close()
 
-        if archiveJournalLog['event'] == 'ScanOrganic':
-            txtInputJournal.text = json.dumps(archiveJournalLog)
-            showAlert("", "", "fonts/system-notification-199277.mp3", "s")
+        if log_journal['event'] == 'ScanOrganic':
+            arquivo_registros_especies = open(f'{caminho_fonte}/registro.json', 'r')
+            arquivo_registros_especies_json = json.loads(arquivo_registros_especies.read())
+            arquivo_registros_especies.close()
+
+            if log_journal['Variant_Localised'] not in arquivo_registros_especies_json['especiesCatalogadas']:
+                txt_entrada_journal.text = json.dumps(log_journal)
+                notifica_alerta("", "", "fonts/system-notification-199277.mp3", "s")
+                preenche_journais_temporarios(json.dumps(log_journal))
 
 
-def registrarDescoberta():
-    registryJournal = json.loads(txtInputJournal.text)
-    specie = registryJournal['Variant_Localised']
+def registrar_descoberta():
+    registro_journal = json.loads(txt_entrada_journal.text)
+    especie = registro_journal['Variant_Localised']
 
-    registryDaily = open(f'{pathOrigin}/registro.json', 'r')
-    registryDailyJSON = json.loads(registryDaily.read())
+    arquivo_registros_especies = open(f'{caminho_fonte}/registro.json', 'r')
+    arquivo_registros_especies_json = json.loads(arquivo_registros_especies.read())
 
-    if specie not in registryDailyJSON['especiesCatalogadas']:
-        registryDailyJSON['especiesCatalogadas'].__setitem__(specie, {"registro": registryJournal})
-        registryDaily.close()
+    if especie not in arquivo_registros_especies_json['especiesCatalogadas']:
+        arquivo_registros_especies_json['especiesCatalogadas'].__setitem__(especie, {"registro": registro_journal})
+        arquivo_registros_especies.close()
 
-        registryDayly = open(f'{pathOrigin}/registro.json', 'w')
-        registryDayly.write(json.dumps(registryDailyJSON))
-        registryDayly.close()
+        arquivo_registros_especies = open(f'{caminho_fonte}/registro.json', 'w')
+        arquivo_registros_especies.write(json.dumps(arquivo_registros_especies_json))
+        arquivo_registros_especies.close()
 
-        showAlert("ESPÉCIE REGISTRADA COM SUCESSO!", "REGISTRO CONCLUÍDO", "fonts/system-notification-199277.mp3", "ms")
+        imagem_com_borda_atual = Image.open(f'{caminho_fonte}/gallery/imagemCortadaComBorda.png')
+        imagem_com_borda_atual.save(f'{caminho_fonte}/gallery/REGISTRO DE ESPECIES/{especie}.png')
 
-        reloadWidgets()
-        layoutBottom.spacing = 400
-        toggleWidgets(layoutBottomOptions, buttonReplace, "r")
+        notifica_alerta("ESPÉCIE REGISTRADA COM SUCESSO!", "REGISTRO CONCLUÍDO", "fonts/system-notification-199277.mp3",
+                        "ms")
+
+        recarregar_widgets()
+        layout_rodape.spacing = 400
+        alterar_widgets(layout_rodape_botoes, botao_substituir, "r")
 
     else:
-        showAlert("ESPÉCIE JÁ REGISTRADA!", "FALHA NO REGISTRO", "fonts/error-5-199276.mp3", "ms")
-        layoutBottom.spacing = 300
-        toggleWidgets(layoutBottomOptions, buttonReplace, "a")
+        notifica_alerta("ESPÉCIE JÁ REGISTRADA! CASO QUEIRA SUBSTITUIR A MINIATURA ATUAL PRESSIONE 'SUBSTITUIR'", "FALHA NO REGISTRO", "fonts/error-5-199276.mp3", "ms")
+        layout_rodape.spacing = 300
+        alterar_widgets(layout_rodape_botoes, botao_substituir, "a")
 
 
-def reloadWidgets():
+def recarregar_widgets():
     Window.size = (800, 200)
-    layoutMain.remove_widget(layoutImage)
-    txtInputJournal.text = ""
-    toggleWidgets(layoutBottomOptions, buttonReplace, "r")
-    layoutBottom.spacing = 400
-    resetarBotoesPequenos("r")
-    currentPosition["pos"] = (0,0)
+    layout_principal.remove_widget(layout_imagem)
+    layout_principal.remove_widget(layout_botoes_pequenos)
+    txt_entrada_journal.text = ""
+    alterar_widgets(layout_rodape_botoes, botao_substituir, "r")
+    layout_rodape.spacing = 400
+    resetar_botoes_pequenos("r")
+    posicao_atual["pos"] = (0, 0)
 
 
-def createObserverKeyboard():
+def criar_observador_teclado():
     def on_presskeyboard(key):
         if key == Key.f2:
-            gerarImagem()
+            gerar_imagem()
 
     listener = Listener(on_press=on_presskeyboard)
     listener.start()
 
 
-def showAlert(msg, tittle, sound, mode):
+def notifica_alerta(msg, titulo, som, modo):
     def tocarmusica():
-        playsound(sound)
+        playsound(som)
 
     def mostrarAlerta():
         MessageBox = ctypes.windll.user32.MessageBoxW
-        MessageBox(None, msg, tittle, 0)
+        MessageBox(None, msg, titulo, 0)
 
-    if mode == "s":
+    if modo == "s":
         threadSound = Thread(target=tocarmusica)
         threadSound.start()
-    if mode == "ms":
+    if modo == "ms":
         threadSound = Thread(target=tocarmusica)
         trhedMessage = Thread(target=mostrarAlerta)
         threadSound.start()
         trhedMessage.start()
 
 
-def toggleWidgets(father, children, mode):
+def alterar_widgets(widgetPai, widgetFilho, modo):
     try:
-        if (mode == "r"):
-            father.remove_widget(children)
+        if (modo == "r"):
+            widgetPai.remove_widget(widgetFilho)
             print("REMOVENDO")
-        elif (mode == "a"):
-            father.add_widget(children)
+        elif (modo == "a"):
+            widgetPai.add_widget(widgetFilho)
             print("ADICIONANDO")
 
 
@@ -524,18 +646,32 @@ def toggleWidgets(father, children, mode):
         print(excep)
 
 
-def resetarBotoesPequenos(mode="t"):
-    for button in allSmallButton[0]:
+def resetar_botoes_pequenos(mode="t"):
+    for botao in todos_botoes_pequenos[0]:
 
         if mode == "t":
-            if button.disabled == True:
-                button.disabled = False
+            if botao.disabled == True:
+                botao.disabled = False
             else:
-                button.disabled = False
+                botao.disabled = False
         elif mode == "r":
-            button.disabled = True
+            botao.disabled = True
+
+
+def preenche_journais_temporarios(journal):
+    registro_journais_temporarios = open(f'{caminho_fonte}/journaisTemporarios.json', 'r')
+    registro_journais_temporarios_json = json.loads(registro_journais_temporarios.read())
+
+    registro_journais_temporarios_json["journaisTemporarios"].pop(0)
+    registro_journais_temporarios_json["journaisTemporarios"].append(journal)
+
+    registro_journais_temporarios.close()
+
+    registro_journais_temporarios = open(f'{caminho_fonte}/journaisTemporarios.json', 'w')
+    registro_journais_temporarios.write(json.dumps(registro_journais_temporarios_json))
+    registro_journais_temporarios.close()
 
 
 if __name__ == "__main__":
-    myApp = MeuAplicativo()
-    myApp.run()
+    meu_aplicativo = Meuaplicativo()
+    meu_aplicativo.run()
