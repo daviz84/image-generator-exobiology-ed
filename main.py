@@ -15,6 +15,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.image import AsyncImage
+from PIL import ImageGrab
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
@@ -357,7 +358,7 @@ class Meuaplicativo(App):
             arquivo_registros_especies.write('{"especiesCatalogadas": {}}')
             arquivo_registros_especies.close()
 
-            arquivo_journais_temporarios = open(f'{caminho_fonte}/journaisTemp.json', 'w')
+            arquivo_journais_temporarios = open(f'{caminho_fonte}/journaisTemporarios.json', 'w')
             arquivo_journais_temporarios.write('{"journaisTemporarios":["", "", ""]}')
             arquivo_journais_temporarios.close()
 
@@ -371,7 +372,7 @@ def gerar_imagem():
         imagem_molde_escrito = gerar_molde()
 
         # CAPTURA O MONITOR PRINCIPAL E SALVA COMO ARQUIVO "TEMPORARIO"
-        imagem_captura_tela = pyscreenshot.grab()
+        imagem_captura_tela = ImageGrab.grab()
         imagem_captura_tela.save(f'{caminho_fonte}/gallery/imgTemp.png')
 
         #printscreen = Image.open(f'{caminho_fonte}/gallery/imgTemp.png')
