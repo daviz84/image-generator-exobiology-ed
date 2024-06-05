@@ -260,6 +260,7 @@ editor_imagem.width = 700
 editor_imagem.height = 350
 editor_imagem.padding = (0, 0, 0, 0)
 editor_imagem.fit_mode = "fill"
+editor_imagem.source = ""
 
 layout_rodape = BoxLayout()
 layout_rodape.size_hint = (None, None)
@@ -437,8 +438,12 @@ def colar_molde(captura_tela, molde, posicoes, cor="R"):
 
     gerar_miniatura(captura_tela, posicoes, cor)
 
-    editor_imagem.source = f'{caminho_fonte}/gallery/imagemMesclada.png'
-    editor_imagem.reload()
+    if "imagemCortadaComBorda.png" in editor_imagem.source:
+        editor_imagem.source = f'{caminho_fonte}/gallery/imagemCortadaComBorda.png'
+        editor_imagem.reload()
+    else:
+        editor_imagem.source = f'{caminho_fonte}/gallery/imagemMesclada.png'
+        editor_imagem.reload()
 
 
 def gerar_miniatura(img, posicoes, cor="R"):
@@ -467,16 +472,17 @@ def gerar_miniatura(img, posicoes, cor="R"):
             pontaUmY = pontaUmY - 25
             pontaDoisY = pontaDoisY - 25
 
-    imagem_cortada = img.crop((pontaUmX, pontaUmY, pontaDoisX, pontaDoisY))
+    #imagem_cortada = img.crop((pontaUmX, pontaUmY, pontaDoisX, pontaDoisY))
+    imagem_cortada = img.resize((880,550))
 
     borda_molde = Image.open(f'resources/borda_miniatura_M.png')
     borda_molde_colorida = Image.open(f'resources/borda_miniatura_{cor}.png')
 
-    borda_molde.paste(imagem_cortada, (70, 37))
+    borda_molde.paste(imagem_cortada, (67, 33))
 
     borda_molde.paste(borda_molde_colorida, (0, 0), borda_molde_colorida)
 
-    #imagem_cortada.save(f'{caminho_fonte}/gallery/imagemCortada.png')
+    imagem_cortada.save(f'{caminho_fonte}/gallery/imagemCortada.png')
     borda_molde.save(f'{caminho_fonte}/gallery/imagemCortadaComBorda.png')
 
 
