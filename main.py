@@ -359,7 +359,7 @@ class Meuaplicativo(App):
             arquivo_registros_especies.close()
 
             arquivo_journais_temporarios = open(f'{caminho_fonte}/journaisTemporarios.json', 'w')
-            arquivo_journais_temporarios.write('{"journaisTemporarios":["", "", ""]}')
+            arquivo_journais_temporarios.write('{"journaisTemporarios":["", "", ""], "planetaAtual": ""}')
             arquivo_journais_temporarios.close()
 
         except FileExistsError:
@@ -403,7 +403,16 @@ def gerar_molde(cor="R"):
     # REQUISIÇÃO NOME DO SISTEMA PELO CODIGO DO JOURNAL (RETORNA UM JSON STRING)
     realiza_requisicao_nome_sistema = requests.get(
         f"https://www.edsm.net/typeahead/systems/query/{registro_journal['SystemAddress']}")
-    resultado_nome_sistema = realiza_requisicao_nome_sistema.json()[0]["value"]
+
+    try:
+        #TRATAMENTO DE EXCEÇÕES PARA SISTEMAS NÃO DESCOBERTOS (PUXANDO DO JOURNAL)
+        resultado_nome_sistema = realiza_requisicao_nome_sistema.json()[0]["value"]
+    except IndexError:
+        registro_journais_temporarios = open(f'{caminho_fonte}/journaisTemporarios.json', 'r')
+        registro_journais_temporarios_json = json.loads(registro_journais_temporarios.read())
+
+        resultado_nome_sistema = registro_journais_temporarios_json["planetaAtual"]
+
 
     # PREENCHE IMAGEM COM AS INFORMAÇÕES
     molde = Image.open(f'resources/fundo_colorido_{cor}.png')
@@ -413,7 +422,7 @@ def gerar_molde(cor="R"):
     molde_escrever = ImageDraw.Draw(molde)
 
     molde_fonte_especie = ImageFont.truetype('fonts/TechnoBoard.ttf', 29)
-    molde_fonte_sistema = ImageFont.truetype('fonts/Glitch inside.otf', 14)
+    molde_fonte_sistema = ImageFont.truetype('fonts/Glitch inside.otf', 12)
 
     #CASO EXCEDA O NÚMERO DE CARACTERES QUE CAIBA NA PLAQUINHA
     if len(registro_journal['Species_Localised']) > 19:
@@ -448,6 +457,8 @@ def colar_molde(captura_tela, molde, posicoes, cor="R"):
 
 
 def gerar_miniatura(img, posicoes, cor="R"):
+
+    """
     pontaUmX = posicoes[0] - 534  # -100 da plaquinha
     pontaUmY = posicoes[1] - 50
     pontaDoisX = posicoes[0] + 435  # +100 da plaquinha
@@ -474,6 +485,8 @@ def gerar_miniatura(img, posicoes, cor="R"):
             pontaDoisY = pontaDoisY - 25
 
     #imagem_cortada = img.crop((pontaUmX, pontaUmY, pontaDoisX, pontaDoisY))
+
+    """
     imagem_cortada = img.resize((880,550))
 
     borda_molde = Image.open(f'resources/borda_miniatura_M.png')
@@ -558,10 +571,14 @@ def analisa_journal(arquivo_modificado):
 
         journal_atualizado = open(arquivo_modificado, "r", errors='replace')
         journal_lido = journal_atualizado.readlines()
-        log_journal = json.loads(journal_lido[len(journal_lido) - 1])
         journal_atualizado.close()
 
+        log_journal = json.loads(journal_lido[len(journal_lido) - 1])
+
         if log_journal['event'] == 'ScanOrganic':
+
+            atualiza_planeta_atual(arquivo_modificado, log_journal['SystemAddress'])
+
             arquivo_registros_especies = open(f'{caminho_fonte}/registro.json', 'r')
             arquivo_registros_especies_json = json.loads(arquivo_registros_especies.read())
             arquivo_registros_especies.close()
@@ -570,6 +587,30 @@ def analisa_journal(arquivo_modificado):
                 txt_entrada_journal.text = json.dumps(log_journal)
                 notifica_alerta("", "", "fonts/system-notification-199277.mp3", "s")
                 preenche_journais_temporarios(json.dumps(log_journal))
+
+def atualiza_planeta_atual(arquivo_modificado, codigo_planeta_scan):
+
+    journal_atualizado = open(arquivo_modificado, "r", errors='replace')
+    journal_lido = journal_atualizado.readlines()
+    journal_atualizado.close()
+
+    for log in journal_lido:
+
+        log_journal = json.loads(log)
+
+        if log_journal['event'] == 'Disembark' and log_journal['SystemAddress'] == codigo_planeta_scan:
+
+            registro_journais_temporarios = open(f'{caminho_fonte}/journaisTemporarios.json', 'r')
+            registro_journais_temporarios_json = json.loads(registro_journais_temporarios.read())
+
+            registro_journais_temporarios_json["planetaAtual"] = log_journal["Body"]
+
+            registro_journais_temporarios.close()
+
+            registro_journais_temporarios = open(f'{caminho_fonte}/journaisTemporarios.json', 'w')
+            registro_journais_temporarios.write(json.dumps(registro_journais_temporarios_json))
+            registro_journais_temporarios.close()
+
 
 
 def registrar_descoberta():
